@@ -1,0 +1,3711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes" />
+  <title>CCS Fuel System · Enterprise</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&family=SF+Pro+Text:wght@400;500;600&family=SF+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* ===== DESIGN SYSTEM ===== */
+    :root {
+      /* Primary palette - refined corporate */
+      --primary-900: #0A1A2F;
+      --primary-800: #122B45;
+      --primary-700: #1E3A5A;
+      --primary-600: #2B4A70;
+      --primary-500: #3A5B85;
+      --primary-400: #4F73A0;
+      
+      /* Accent - sophisticated crimson */
+      --accent-900: #7A1F2D;
+      --accent-800: #9B2C3A;
+      --accent-700: #B43A48;
+      --accent-600: #C41E3A;
+      --accent-500: #D43B54;
+      --accent-400: #E35D72;
+      --accent-200: #F5C0C8;
+      --accent-100: #FAEAEC;
+      --accent-50:  #FDF5F6;
+      
+      /* Status colors - refined */
+      --success-900: #1E4B3A;
+      --success-800: #2E6B4E;
+      --success-700: #3D8662;
+      --success-600: #4C9F76;
+      --success-100: #E8F3EF;
+      
+      --warning-900: #8B451F;
+      --warning-800: #B45F2A;
+      --warning-700: #D47A3E;
+      --warning-600: #E8944F;
+      --warning-100: #FCF5EB;
+      
+      --error-900: #7A2A36;
+      --error-800: #A42D3D;
+      --error-700: #C23B4C;
+      --error-600: #DC4F61;
+      --error-100: #FCF0F2;
+      
+      --info-900: #234B68;
+      --info-800: #3A6B8F;
+      --info-700: #4F86B0;
+      --info-600: #67A0CC;
+      --info-100: #F0F7FC;
+      
+      /* Neutrals - premium */
+      --neutral-50: #F9FAFC;
+      --neutral-100: #F2F5F9;
+      --neutral-200: #E9EEF3;
+      --neutral-300: #DCE3EB;
+      --neutral-400: #B8C3D1;
+      --neutral-500: #8F9BAE;
+      --neutral-600: #667085;
+      --neutral-700: #475467;
+      --neutral-800: #2C3A4B;
+      --neutral-900: #1A2634;
+      
+      /* Glass effects */
+      --glass-bg: rgba(255, 255, 255, 0.72);
+      --glass-border: rgba(255, 255, 255, 0.5);
+      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+      
+      /* Shadows */
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
+      --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.16);
+      
+      /* Typography */
+      --font-sans: 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-text: 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-mono: 'SF Mono', 'JetBrains Mono', monospace;
+      
+      /* Spacing */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-10: 40px;
+      --space-12: 48px;
+      
+      /* Border radius */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --radius-2xl: 24px;
+      --radius-full: 9999px;
+    }
+
+    /* ===== RESET & BASE ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-text);
+      background: linear-gradient(135deg, var(--neutral-50) 0%, var(--neutral-100) 100%);
+      color: var(--neutral-900);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ===== TYPOGRAPHY SCALE ===== */
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-sans);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .display-1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .display-2 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .heading-1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .heading-2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .heading-3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .body-large {
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    .body-regular {
+      font-size: 0.9375rem;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    .body-small {
+      font-size: 0.875rem;
+      font-weight: 400;
+      line-height: 1.5;
+      color: var(--neutral-600);
+    }
+
+    .caption {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--neutral-500);
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+      font-feature-settings: "tnum";
+    }
+
+    /* ===== CARDS & ELEVATION ===== */
+    .card {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: var(--space-5);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+      border: 1px solid var(--neutral-200);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-600), var(--accent-400));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--neutral-300);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card-glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-5);
+      border-radius: var(--radius-full);
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 0.9375rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .btn:active::after {
+      width: 300px;
+      height: 300px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-700), var(--accent-600));
+      color: white;
+      box-shadow: 0 4px 12px rgba(196, 30, 58, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(196, 30, 58, 0.4);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: var(--neutral-800);
+      border: 1px solid var(--neutral-300);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-secondary:hover {
+      background: var(--neutral-50);
+      border-color: var(--neutral-400);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--neutral-700);
+    }
+
+    .btn-ghost:hover {
+      background: var(--neutral-100);
+    }
+
+    .btn-sm {
+      padding: var(--space-2) var(--space-4);
+      font-size: 0.875rem;
+    }
+
+    .btn-lg {
+      padding: var(--space-4) var(--space-6);
+      font-size: 1rem;
+    }
+
+    .btn-icon {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: var(--radius-full);
+    }
+
+    /* ===== INPUTS ===== */
+    .input-group {
+      position: relative;
+      margin-bottom: var(--space-4);
+    }
+
+    .input-field {
+      width: 100%;
+      padding: var(--space-4) var(--space-4) var(--space-2);
+      border: 1.5px solid var(--neutral-200);
+      border-radius: var(--radius-lg);
+      font-family: var(--font-text);
+      font-size: 0.9375rem;
+      background: white;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent-600);
+      box-shadow: 0 0 0 4px rgba(196, 30, 58, 0.1);
+    }
+
+    .input-label {
+      position: absolute;
+      left: var(--space-4);
+      top: var(--space-4);
+      font-size: 0.9375rem;
+      color: var(--neutral-500);
+      transition: all 0.2s ease;
+      pointer-events: none;
+      background: white;
+      padding: 0 var(--space-1);
+    }
+
+    .input-field:focus ~ .input-label,
+    .input-field:not(:placeholder-shown) ~ .input-label {
+      transform: translateY(-20px) scale(0.85);
+      color: var(--accent-600);
+      font-weight: 500;
+    }
+
+    .input-field::placeholder {
+      color: transparent;
+    }
+
+    /* ===== SELECT ===== */
+    .select-wrapper {
+      position: relative;
+    }
+
+    .select-wrapper::after {
+      content: '\f107';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      position: absolute;
+      right: var(--space-4);
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--neutral-500);
+      pointer-events: none;
+    }
+
+    .select-field {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      border: 1.5px solid var(--neutral-200);
+      border-radius: var(--radius-lg);
+      font-family: var(--font-text);
+      font-size: 0.9375rem;
+      background: white;
+      appearance: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .select-field:focus {
+      border-color: var(--accent-600);
+      box-shadow: 0 0 0 4px rgba(196, 30, 58, 0.1);
+      outline: none;
+    }
+
+    /* ===== BADGES ===== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 0.75rem;
+      letter-spacing: 0.02em;
+      line-height: 1.4;
+      gap: var(--space-1);
+      white-space: nowrap;
+    }
+
+    .badge-success {
+      background: var(--success-100);
+      color: var(--success-800);
+      border: 1px solid var(--success-700);
+    }
+
+    .badge-warning {
+      background: var(--warning-100);
+      color: var(--warning-800);
+      border: 1px solid var(--warning-700);
+    }
+
+    .badge-error {
+      background: var(--error-100);
+      color: var(--error-800);
+      border: 1px solid var(--error-700);
+    }
+
+    .badge-info {
+      background: var(--info-100);
+      color: var(--info-800);
+      border: 1px solid var(--info-700);
+    }
+
+    /* ===== MODALS ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 38, 52, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-container {
+      background: white;
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-xl);
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: scale(0.95) translateY(20px);
+      transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .modal-overlay.active .modal-container {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      padding: var(--space-5) var(--space-6);
+      border-bottom: 1px solid var(--neutral-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-body {
+      padding: var(--space-6);
+    }
+
+    .modal-footer {
+      padding: var(--space-4) var(--space-6);
+      border-top: 1px solid var(--neutral-200);
+      display: flex;
+      gap: var(--space-3);
+      justify-content: flex-end;
+    }
+
+    /* ===== TABLES ===== */
+    .table-container {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--neutral-200);
+      overflow: auto;
+      background: white;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9375rem;
+    }
+
+    .table th {
+      background: var(--neutral-50);
+      padding: var(--space-4) var(--space-4);
+      text-align: left;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 0.8125rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--neutral-600);
+      border-bottom: 1px solid var(--neutral-200);
+      position: sticky;
+      top: 0;
+      background: var(--neutral-50);
+      backdrop-filter: blur(8px);
+    }
+
+    .table td {
+      padding: var(--space-4) var(--space-4);
+      border-bottom: 1px solid var(--neutral-200);
+      color: var(--neutral-800);
+    }
+
+    .table tbody tr {
+      transition: background 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+      background: var(--neutral-50);
+    }
+
+    .table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ===== PROGRESS BARS ===== */
+    .progress-bar {
+      height: 8px;
+      background: var(--neutral-200);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      transition: width 0.6s cubic-bezier(0.34, 1.5, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, rgba(255,255,255,0.2), rgba(255,255,255,0));
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* ===== SKELETON LOADING ===== */
+    .skeleton {
+      background: linear-gradient(90deg, var(--neutral-200) 25%, var(--neutral-300) 50%, var(--neutral-200) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border-radius: var(--radius-sm);
+    }
+
+    @keyframes skeleton-loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes slideInRight {
+      from { transform: translateX(20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease;
+    }
+
+    .animate-slide-up {
+      animation: slideUp 0.4s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .animate-slide-right {
+      animation: slideInRight 0.3s ease;
+    }
+
+    /* ===== LAYOUT ===== */
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: white;
+      border-right: 1px solid var(--neutral-200);
+      padding: var(--space-6);
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      overflow-y: auto;
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .sidebar.collapsed {
+      width: 80px;
+    }
+
+    .sidebar-logo {
+      padding: var(--space-4) 0;
+      margin-bottom: var(--space-6);
+      border-bottom: 1px solid var(--neutral-200);
+    }
+
+    .sidebar-logo h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-700), var(--accent-600));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .sidebar.collapsed .sidebar-logo h1 {
+      font-size: 1rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-lg);
+      color: var(--neutral-700);
+      font-weight: 500;
+      transition: all 0.2s ease;
+      margin-bottom: var(--space-1);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+    }
+
+    .nav-item:hover {
+      background: var(--neutral-100);
+      color: var(--neutral-900);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, var(--accent-50), var(--accent-100));
+      color: var(--accent-700);
+      box-shadow: 0 2px 8px rgba(196, 30, 58, 0.1);
+    }
+
+    .nav-item i {
+      width: 24px;
+      font-size: 1.25rem;
+    }
+
+    .sidebar.collapsed .nav-item span {
+      display: none;
+    }
+
+    /* Main content */
+    .main-content {
+      flex: 1;
+      margin-left: 280px;
+      padding: var(--space-6);
+      transition: margin-left 0.3s ease;
+    }
+
+    .main-content.expanded {
+      margin-left: 80px;
+    }
+
+    /* Top bar */
+    .top-bar {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6);
+      position: sticky;
+      top: 0;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-6);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: white;
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-full);
+      padding: var(--space-2) var(--space-4);
+      width: 300px;
+      transition: all 0.2s ease;
+    }
+
+    .search-bar:focus-within {
+      border-color: var(--accent-600);
+      box-shadow: 0 0 0 4px rgba(196, 30, 58, 0.1);
+      width: 350px;
+    }
+
+    .search-bar input {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 100%;
+      font-size: 0.9375rem;
+    }
+
+    .search-bar i {
+      color: var(--neutral-500);
+    }
+
+    /* Stats tiles */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .stat-tile {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: var(--space-5);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--neutral-200);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-tile::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent-600), var(--accent-400));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .stat-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stat-tile:hover::before {
+      opacity: 1;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--neutral-600);
+      margin-bottom: var(--space-2);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--neutral-900);
+      line-height: 1.2;
+    }
+
+    .stat-trend {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: 0.875rem;
+      margin-top: var(--space-2);
+    }
+
+    .trend-up { color: var(--success-700); }
+    .trend-down { color: var(--error-700); }
+
+    /* Order cards */
+    .order-card {
+      background: white;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--neutral-200);
+      margin-bottom: var(--space-4);
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .order-card:hover {
+      border-color: var(--neutral-300);
+      box-shadow: var(--shadow-md);
+    }
+
+    .order-header {
+      padding: var(--space-4) var(--space-5);
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .order-header:hover {
+      background: var(--neutral-50);
+    }
+
+    .order-status-indicator {
+      width: 4px;
+      height: 40px;
+      border-radius: var(--radius-full);
+    }
+
+    .status-open { background: var(--success-700); }
+    .status-closed { background: var(--warning-700); }
+    .status-over { background: var(--error-700); }
+
+    .order-info {
+      flex: 1;
+    }
+
+    .order-title {
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 1.125rem;
+      color: var(--neutral-900);
+      margin-bottom: var(--space-1);
+    }
+
+    .order-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: 0.875rem;
+      color: var(--neutral-600);
+    }
+
+    .order-meta i {
+      font-size: 0.75rem;
+      color: var(--neutral-400);
+    }
+
+    .order-stats {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .order-progress {
+      width: 120px;
+    }
+
+    .order-chevron {
+      color: var(--neutral-400);
+      transition: transform 0.3s ease;
+    }
+
+    .order-chevron.expanded {
+      transform: rotate(180deg);
+    }
+
+    .order-body {
+      padding: var(--space-5);
+      border-top: 1px solid var(--neutral-200);
+      background: var(--neutral-50);
+    }
+
+    /* Technician allocation rows */
+    .tech-alloc-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-3);
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--neutral-200);
+      margin-bottom: var(--space-2);
+      transition: all 0.2s ease;
+    }
+
+    .tech-alloc-row:hover {
+      border-color: var(--neutral-300);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .tech-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, var(--accent-100), var(--accent-200));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-700);
+      font-weight: 600;
+    }
+
+    .tech-details {
+      flex: 1;
+    }
+
+    .tech-name {
+      font-weight: 600;
+      color: var(--neutral-900);
+      margin-bottom: var(--space-1);
+    }
+
+    .tech-plate {
+      font-size: 0.8125rem;
+      color: var(--neutral-600);
+    }
+
+    .tech-stats {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-top: var(--space-2);
+    }
+
+    .stat-badge {
+      padding: var(--space-1) var(--space-2);
+      background: var(--neutral-100);
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* Leaderboard */
+    .leaderboard-card {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4);
+      background: white;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--neutral-200);
+      margin-bottom: var(--space-3);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .leaderboard-card:hover {
+      transform: translateX(4px);
+      border-color: var(--accent-600);
+      box-shadow: var(--shadow-md);
+    }
+
+    .rank-badge {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    .rank-1 { background: linear-gradient(135deg, #FFD700, #FFC800); color: #7D5E00; }
+    .rank-2 { background: linear-gradient(135deg, #E0E0E0, #D0D0D0); color: #5E5E5E; }
+    .rank-3 { background: linear-gradient(135deg, #CD7F32, #B87333); color: #5E3A1A; }
+
+    .lb-bar-container {
+      flex: 1;
+      height: 6px;
+      background: var(--neutral-200);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .lb-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-600), var(--accent-400));
+      border-radius: var(--radius-full);
+      transition: width 0.6s cubic-bezier(0.34, 1.5, 0.64, 1);
+    }
+
+    /* Empty states */
+    .empty-state {
+      text-align: center;
+      padding: var(--space-12) var(--space-6);
+      background: white;
+      border-radius: var(--radius-xl);
+      border: 2px dashed var(--neutral-300);
+    }
+
+    .empty-state i {
+      font-size: 3rem;
+      color: var(--neutral-400);
+      margin-bottom: var(--space-4);
+    }
+
+    .empty-state h3 {
+      font-size: 1.25rem;
+      color: var(--neutral-700);
+      margin-bottom: var(--space-2);
+    }
+
+    .empty-state p {
+      color: var(--neutral-500);
+      margin-bottom: var(--space-4);
+    }
+
+    /* Toast notifications */
+    .toast-container {
+      position: fixed;
+      bottom: var(--space-6);
+      right: var(--space-6);
+      z-index: 1000;
+    }
+
+    .toast {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: var(--space-4) var(--space-5);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-top: var(--space-2);
+      animation: slideInRight 0.3s ease;
+      border-left: 4px solid var(--success-700);
+    }
+
+    .toast.error { border-left-color: var(--error-700); }
+    .toast.warning { border-left-color: var(--warning-700); }
+    .toast.info { border-left-color: var(--info-700); }
+
+    /* Context menu */
+    .context-menu {
+      position: fixed;
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--neutral-200);
+      padding: var(--space-2);
+      min-width: 180px;
+      z-index: 1000;
+      display: none;
+    }
+
+    .context-menu.active {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .context-menu-item {
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .context-menu-item:hover {
+      background: var(--neutral-100);
+    }
+
+    .context-menu-item i {
+      width: 20px;
+      color: var(--neutral-600);
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .top-bar {
+        flex-direction: column;
+        gap: var(--space-3);
+      }
+
+      .search-bar {
+        width: 100%;
+      }
+
+      .search-bar:focus-within {
+        width: 100%;
+      }
+    }
+
+    /* Keyboard shortcuts */
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-1) var(--space-2);
+      background: var(--neutral-100);
+      border: 1px solid var(--neutral-300);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--neutral-700);
+      box-shadow: 0 2px 0 var(--neutral-300);
+    }
+
+    /* Haptic feedback simulation */
+    .haptic {
+      transition: transform 0.1s ease;
+    }
+
+    .haptic:active {
+      transform: scale(0.98);
+    }
+
+    /* Print styles */
+    @media print {
+      .sidebar, .top-bar, .btn {
+        display: none;
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .card {
+        break-inside: avoid;
+        border: 1px solid #000;
+      }
+    }
+
+    /* Multi-date selector */
+    .date-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: var(--space-2);
+      max-height: 400px;
+      overflow-y: auto;
+      padding: var(--space-2);
+    }
+
+    .date-checkbox {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2);
+      background: var(--neutral-50);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--neutral-200);
+      transition: all 0.2s ease;
+    }
+
+    .date-checkbox:hover {
+      background: white;
+      border-color: var(--accent-600);
+    }
+
+    .date-checkbox input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent-600);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <h1 class="display-2">CCS</h1>
+      </div>
+      
+      <div class="nav-section">
+        <button class="nav-item active" onclick="setPage('daily', this)">
+          <i class="fa-regular fa-calendar"></i>
+          <span>Daily</span>
+        </button>
+        <button class="nav-item" onclick="setPage('orders', this)">
+          <i class="fa-regular fa-file-lines"></i>
+          <span>Orders</span>
+        </button>
+        <button class="nav-item" onclick="setPage('regions', this)">
+          <i class="fa-regular fa-building"></i>
+          <span>Regions</span>
+        </button>
+        <button class="nav-item" onclick="setPage('reports', this)">
+          <i class="fa-regular fa-chart-bar"></i>
+          <span>Reports</span>
+        </button>
+        <button class="nav-item" onclick="setPage('leaderboard', this)">
+          <i class="fa-regular fa-trophy"></i>
+          <span>Leaderboard</span>
+        </button>
+      </div>
+
+      <div style="margin-top: auto; padding-top: var(--space-6);">
+        <div class="nav-item" onclick="toggleSidebar()">
+          <i class="fa-regular fa-chevron-left"></i>
+          <span>Collapse</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+      <!-- Top Bar -->
+      <div class="top-bar">
+        <div class="search-bar">
+          <i class="fa-regular fa-magnifying-glass"></i>
+          <input type="text" placeholder="Search orders, technicians..." id="globalSearch" oninput="handleGlobalSearch()">
+          <span class="kbd">⌘K</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <span class="badge badge-info" id="backupIndicator">
+            <i class="fa-regular fa-cloud"></i>
+            <span>Backed up today</span>
+          </span>
+          
+          <div class="flex items-center gap-2">
+            <span class="body-small">Region:</span>
+            <div class="select-wrapper" style="width: 160px;">
+              <select class="select-field" id="regionSelect" onchange="changeRegion()"></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Page Content -->
+      <div id="pageContent"></div>
+    </main>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Context Menu -->
+  <div class="context-menu" id="contextMenu"></div>
+
+  <!-- Modals -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="heading-3">Edit Entry</h3>
+        <button class="btn btn-icon btn-ghost" onclick="closeModal('editModal')">
+          <i class="fa-regular fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <input type="number" class="input-field" id="editSupplied" placeholder=" ">
+          <label class="input-label">Litres Supplied</label>
+        </div>
+        <div class="input-group" id="editCommentGroup" style="display: none;">
+          <input type="text" class="input-field" id="editComment" placeholder=" ">
+          <label class="input-label">Comment</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEditEntry()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overage Modal -->
+  <div class="modal-overlay" id="overageModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="heading-3">Overage Comment</h3>
+        <button class="btn btn-icon btn-ghost" onclick="closeModal('overageModal')">
+          <i class="fa-regular fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="body-small" id="overageMeta" style="margin-bottom: var(--space-4);"></div>
+        <div class="input-group">
+          <input type="text" class="input-field" id="overageComment" placeholder=" ">
+          <label class="input-label">Reason for overage</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('overageModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveOverageComment()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Modal -->
+  <div class="modal-overlay" id="summaryModal">
+    <div class="modal-container" style="max-width: 900px;">
+      <div class="modal-header">
+        <h3 class="heading-3">Summary Report</h3>
+        <button class="btn btn-icon btn-ghost" onclick="closeModal('summaryModal')">
+          <i class="fa-regular fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--space-6);">
+          <div class="stat-tile">
+            <div class="stat-label">Total Ordered</div>
+            <div class="stat-value" id="summaryTotalOrdered">0L</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total Supplied</div>
+            <div class="stat-value" id="summaryTotalSupplied">0L</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Balance</div>
+            <div class="stat-value" id="summaryBalance">0L</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Entries</div>
+            <div class="stat-value" id="summaryEntries">0</div>
+          </div>
+        </div>
+        
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Technician</th>
+                <th>Order</th>
+                <th>Supplied</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="summaryTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tech History Modal -->
+  <div class="modal-overlay" id="techHistoryModal">
+    <div class="modal-container" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="heading-3" id="techHistoryTitle">Technician History</h3>
+        <button class="btn btn-icon btn-ghost" onclick="closeModal('techHistoryModal')">
+          <i class="fa-regular fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: var(--space-4);">
+          <div class="stat-tile">
+            <div class="stat-label">Total</div>
+            <div class="stat-value" id="techTotal">0L</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Days</div>
+            <div class="stat-value" id="techDays">0</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Orders</div>
+            <div class="stat-value" id="techOrders">0</div>
+          </div>
+        </div>
+        <div id="techHistoryList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rename Modal -->
+  <div class="modal-overlay" id="renameModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="heading-3" id="renameTitle">Rename</h3>
+        <button class="btn btn-icon btn-ghost" onclick="closeModal('renameModal')">
+          <i class="fa-regular fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <input type="text" class="input-field" id="renameInput" placeholder=" ">
+          <label class="input-label">New Name</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('renameModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmRename()">Rename</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clone Modal -->
+  <div class="modal-overlay" id="cloneModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="heading-3">Clone Order</h3>
+        <button class="btn btn-icon btn-ghost" onclick="closeModal('cloneModal')">
+          <i class="fa-regular fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="card" style="margin-bottom: var(--space-4);">
+          <div id="clonePreview"></div>
+        </div>
+        <div class="input-group">
+          <input type="text" class="input-field" id="cloneOrderNo" placeholder=" ">
+          <label class="input-label">New Order Number</label>
+        </div>
+        <div class="input-group">
+          <input type="date" class="input-field" id="cloneOrderDate">
+          <label class="input-label">Order Date</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('cloneModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmClone()">Create Clone</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Date Summary Modal -->
+  <div class="modal-overlay" id="multiDateModal">
+    <div class="modal-container" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3 class="heading-3">Multi-Date Summary</h3>
+        <button class="btn btn-icon btn-ghost" onclick="closeModal('multiDateModal')">
+          <i class="fa-regular fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: var(--space-6);" id="multiDateStats">
+          <div class="stat-tile">
+            <div class="stat-label">Selected Dates</div>
+            <div class="stat-value" id="selectedDatesCount">0</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total Supplied</div>
+            <div class="stat-value" id="multiDateTotal">0L</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total Entries</div>
+            <div class="stat-value" id="multiDateEntries">0</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: var(--space-4);">
+          <h4 class="heading-3" style="margin-bottom: var(--space-3);">Select Dates</h4>
+          <div class="date-grid" id="dateGrid"></div>
+        </div>
+
+        <div class="flex gap-2 justify-end">
+          <button class="btn btn-secondary" onclick="closeModal('multiDateModal')">Cancel</button>
+          <button class="btn btn-primary" onclick="generateMultiDateSummary()">Generate Summary</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Date Results Modal -->
+  <div class="modal-overlay" id="multiDateResultsModal">
+    <div class="modal-container" style="max-width: 1000px;">
+      <div class="modal-header">
+        <h3 class="heading-3">Multi-Date Summary Results</h3>
+        <button class="btn btn-icon btn-ghost" onclick="closeModal('multiDateResultsModal')">
+          <i class="fa-regular fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="multiDateResults"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('multiDateResultsModal')">Close</button>
+        <button class="btn btn-primary" onclick="exportMultiDateSummary()">Export to Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== DATA LAYER (Preserved from original) =====
+    const KEY = 'ccs_fuel_orders_v4';
+    const DEFAULT = {
+      currentRegion: 'New CCS',
+      regions: { 'New CCS': { technicians: [], technicianPlates: {}, orders: {}, dailyLog: {} } }
+    };
+
+    let DB = JSON.parse(localStorage.getItem(KEY)) || structuredClone(DEFAULT);
+    function save() { localStorage.setItem(KEY, JSON.stringify(DB)); }
+
+    // ===== UI STATE =====
+    let currentPage = 'daily';
+    let editContext = null;
+    let overageContext = null;
+    let renameContext = null;
+    let cloneSource = null;
+    let searchTimeout = null;
+    let charts = {};
+    let orderFilterStatus = 'all'; // 'all', 'open', 'closed', 'unassigned'
+    let multiDateSelection = [];
+
+    // ===== INITIALIZATION =====
+    function init() {
+      populateRegions();
+      renderPage('daily');
+      setupKeyboardShortcuts();
+      renderBackupStatus();
+      setupContextMenu();
+    }
+
+    // ===== PAGE RENDERING =====
+    function setPage(page, el) {
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      if (el) el.classList.add('active');
+      renderPage(page);
+    }
+
+    function renderPage(page) {
+      currentPage = page;
+      const content = document.getElementById('pageContent');
+      
+      // Update active nav
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(item => {
+        if (item.textContent.toLowerCase().includes(page)) {
+          item.classList.add('active');
+        }
+      });
+
+      // Render appropriate page
+      switch(page) {
+        case 'daily':
+          renderDailyPage(content);
+          break;
+        case 'orders':
+          renderOrdersPage(content);
+          break;
+        case 'regions':
+          renderRegionsPage(content);
+          break;
+        case 'reports':
+          renderReportsPage(content);
+          break;
+        case 'leaderboard':
+          renderLeaderboardPage(content);
+          break;
+      }
+    }
+
+    // ===== DAILY PAGE =====
+    function renderDailyPage(container) {
+      const today = new Date().toISOString().slice(0, 10);
+      
+      container.innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-tile">
+            <div class="stat-label">
+              <i class="fa-regular fa-calendar"></i> Date
+            </div>
+            <input type="date" class="input-field" id="dailyDate" value="${today}" style="margin-top: var(--space-2);">
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">
+              <i class="fa-regular fa-chart-line"></i> Today's Stats
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="body-small">Ordered:</span>
+              <span class="stat-value" style="font-size: 1.5rem;" id="dailyOrdered">L</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="body-small">Supplied:</span>
+              <span class="stat-value" style="font-size: 1.5rem; color: var(--success-700);" id="dailySupplied">0L</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="body-small">Balance:</span>
+              <span class="stat-value" style="font-size: 1.5rem; color: var(--error-700);" id="dailyBalance">0L</span>
+            </div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">
+              <i class="fa-regular fa-clock"></i> Quick Actions
+            </div>
+            <div class="flex gap-2">
+              <button class="btn btn-primary btn-sm" onclick="loadDailyLog()">
+                <i class="fa-regular fa-rotate-right"></i> Load
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="openSummaryModal()">
+                <i class="fa-regular fa-chart-pie"></i> Summary
+              </button>
+              <button class="btn btn-info btn-sm" onclick="openMultiDateModal()">
+                <i class="fa-regular fa-calendar-plus"></i> Multi-Date
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: var(--space-4);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+            <h3 class="heading-3">Daily Entries</h3>
+            <div class="flex gap-2">
+              <button class="btn btn-secondary btn-sm" onclick="addDailyEntry()">
+                <i class="fa-regular fa-plus"></i> Add Entry
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="saveDaily()">
+                <i class="fa-regular fa-floppy-disk"></i> Save
+              </button>
+            </div>
+          </div>
+          <div id="dailyEntriesContainer"></div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+            <h3 class="heading-3">Supply Log</h3>
+            <span class="badge badge-info" id="entryCount">0 entries</span>
+          </div>
+          <div id="dailyLogContainer"></div>
+        </div>
+
+        <div class="card" style="margin-top: var(--space-4);">
+          <h3 class="heading-3" style="margin-bottom: var(--space-4);">History</h3>
+          <div id="dailyHistoryContainer"></div>
+        </div>
+      `;
+
+      loadDailyLog();
+      renderDailyHistory();
+    }
+
+    // ===== ORDERS PAGE =====
+    function renderOrdersPage(container) {
+      container.innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-tile">
+            <div class="stat-label">Total Ordered</div>
+            <div class="stat-value" id="ordersTotalOrdered">0L</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total Supplied</div>
+            <div class="stat-value" style="color: var(--success-700);" id="ordersTotalSupplied">0L</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Balance</div>
+            <div class="stat-value" style="color: var(--error-700);" id="ordersTotalBalance">0L</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Open Orders</div>
+            <div class="stat-value" id="ordersOpenCount">0</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: var(--space-4);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+            <h3 class="heading-3">Create Order</h3>
+            <button class="btn btn-primary btn-sm" onclick="toggleOrderForm()">
+              <i class="fa-regular fa-chevron-down" id="orderFormChevron"></i>
+            </button>
+          </div>
+          <div id="orderForm" style="display: none;">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="input-group">
+                <input type="text" class="input-field" id="orderNo" placeholder=" ">
+                <label class="input-label">Order Number</label>
+              </div>
+              <div class="input-group">
+                <input type="text" class="input-field" id="vehiclePlate" placeholder=" ">
+                <label class="input-label">Vehicle Plate</label>
+              </div>
+              <div class="input-group">
+                <input type="number" class="input-field" id="totalLiters" placeholder=" ">
+                <label class="input-label">Total Litres</label>
+              </div>
+              <div class="input-group">
+                <input type="date" class="input-field" id="orderDate">
+                <label class="input-label">Order Date</label>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: var(--space-4);" onclick="createOrder()">
+              <i class="fa-regular fa-check"></i> Create Order
+            </button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: var(--space-4);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+            <h3 class="heading-3">Allocate Fuel</h3>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="select-wrapper">
+              <select class="select-field" id="allocOrder"></select>
+            </div>
+            <div class="select-wrapper">
+              <select class="select-field" id="allocTech"></select>
+            </div>
+            <div class="input-group">
+              <input type="number" class="input-field" id="allocAmount" placeholder=" ">
+              <label class="input-label">Litres</label>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width: 100%; margin-top: var(--space-4);" onclick="allocateFuel()">
+            <i class="fa-regular fa-link"></i> Allocate
+          </button>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+            <h3 class="heading-3">All Orders</h3>
+            <div class="flex gap-2">
+              <div class="flex gap-1" style="margin-right: var(--space-4);">
+                <button class="btn btn-sm ${orderFilterStatus === 'all' ? 'btn-primary' : 'btn-secondary'}" onclick="setOrderFilter('all')">All</button>
+                <button class="btn btn-sm ${orderFilterStatus === 'open' ? 'btn-primary' : 'btn-secondary'}" onclick="setOrderFilter('open')">Open</button>
+                <button class="btn btn-sm ${orderFilterStatus === 'closed' ? 'btn-primary' : 'btn-secondary'}" onclick="setOrderFilter('closed')">Closed</button>
+                <button class="btn btn-sm ${orderFilterStatus === 'unassigned' ? 'btn-primary' : 'btn-secondary'}" onclick="setOrderFilter('unassigned')">Unassigned</button>
+              </div>
+              <div class="select-wrapper" style="width: 140px;">
+                <select class="select-field" id="orderFilterTech" onchange="renderOrdersList()">
+                  <option value="">All Techs</option>
+                </select>
+              </div>
+              <input type="date" class="input-field" style="width: 140px;" id="orderFilterFrom" onchange="renderOrdersList()">
+              <input type="date" class="input-field" style="width: 140px;" id="orderFilterTo" onchange="renderOrdersList()">
+            </div>
+          </div>
+          <div id="ordersListContainer"></div>
+        </div>
+      `;
+
+      updateOrderStats();
+      populateAllocOrder();
+      populateAllocTech();
+      renderOrdersList();
+    }
+
+    // ===== REGIONS PAGE =====
+    function renderRegionsPage(container) {
+      container.innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-tile">
+            <div class="stat-label">Total Regions</div>
+            <div class="stat-value" id="regionCount">0</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total Technicians</div>
+            <div class="stat-value" id="techCount">0</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total Orders</div>
+            <div class="stat-value" id="regionOrderCount">0</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: var(--space-4);">
+          <h3 class="heading-3" style="margin-bottom: var(--space-4);">Regions</h3>
+          <div class="flex gap-2" style="margin-bottom: var(--space-4);">
+            <div class="input-group" style="flex: 1;">
+              <input type="text" class="input-field" id="newRegion" placeholder=" ">
+              <label class="input-label">New Region Name</label>
+            </div>
+            <button class="btn btn-primary" onclick="addRegion()">Add Region</button>
+          </div>
+          <div id="regionsList"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="heading-3" style="margin-bottom: var(--space-4);">Technicians</h3>
+          <div class="grid grid-cols-2 gap-4" style="margin-bottom: var(--space-4);">
+            <div class="input-group">
+              <input type="text" class="input-field" id="techName" placeholder=" ">
+              <label class="input-label">Technician Name</label>
+            </div>
+            <div class="input-group">
+              <input type="text" class="input-field" id="techPlate" placeholder=" ">
+              <label class="input-label">Vehicle Plate</label>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width: 100%; margin-bottom: var(--space-4);" onclick="addTechnician()">
+            Add Technician
+          </button>
+          <div id="techListContainer"></div>
+        </div>
+      `;
+
+      renderRegionsList();
+      renderTechList();
+      updateRegionStats();
+    }
+
+    // ===== REPORTS PAGE =====
+    function renderReportsPage(container) {
+      container.innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-tile">
+            <div class="stat-label">Export Options</div>
+            <div class="flex gap-2" style="margin-top: var(--space-2);">
+              <button class="btn btn-primary btn-sm" onclick="exportOrders()">
+                <i class="fa-regular fa-file-excel"></i> Excel
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="backupData()">
+                <i class="fa-regular fa-cloud-arrow-up"></i> Backup
+              </button>
+            </div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Unallocated Total</div>
+            <div class="stat-value" style="color: var(--warning-700);" id="unallocTotal">0L</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Restore Backup</div>
+            <label class="btn btn-secondary btn-sm" style="margin-top: var(--space-2); cursor: pointer;">
+              <i class="fa-regular fa-folder-open"></i> Choose File
+              <input type="file" accept=".json" style="display: none;" onchange="restoreData(event)">
+            </label>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: var(--space-4);">
+          <h3 class="heading-3" style="margin-bottom: var(--space-4);">Unallocated Supply Log</h3>
+          <div id="unallocReportContainer"></div>
+        </div>
+      `;
+
+      renderUnallocReport();
+    }
+
+    // ===== LEADERBOARD PAGE =====
+    function renderLeaderboardPage(container) {
+      container.innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-tile">
+            <div class="stat-label">Top Performer</div>
+            <div class="stat-value" style="font-size: 1.5rem;" id="topPerformer">—</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total Supplied</div>
+            <div class="stat-value" style="color: var(--success-700);" id="leaderboardTotal">0L</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Active Techs</div>
+            <div class="stat-value" id="activeTechs">0</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+            <h3 class="heading-3">Technician Leaderboard</h3>
+            <div class="flex gap-2">
+              <div class="select-wrapper" style="width: 140px;">
+                <select class="select-field" id="lbRegionFilter" onchange="renderLeaderboardList()">
+                  <option value="">All Regions</option>
+                </select>
+              </div>
+              <div class="select-wrapper" style="width: 140px;">
+                <select class="select-field" id="lbDateFilter" onchange="renderLeaderboardList()">
+                  <option value="0">All Time</option>
+                  <option value="7">Last 7 Days</option>
+                  <option value="30">Last 30 Days</option>
+                  <option value="90">Last 90 Days</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div id="leaderboardListContainer"></div>
+        </div>
+      `;
+
+      populateLbRegionFilter();
+      renderLeaderboardList();
+    }
+
+    // ===== NEW ORDER FILTER FUNCTION =====
+    function setOrderFilter(filter) {
+      orderFilterStatus = filter;
+      renderOrdersList();
+    }
+
+    // ===== MULTI-DATE SUMMARY FUNCTIONS =====
+    function openMultiDateModal() {
+      const region = DB.regions[DB.currentRegion];
+      const dates = Object.keys(region.dailyLog).sort().reverse();
+      
+      let html = '';
+      dates.forEach(date => {
+        const entries = region.dailyLog[date];
+        const total = entries.reduce((s, e) => s + e.supplied, 0);
+        html += `
+          <label class="date-checkbox">
+            <input type="checkbox" value="${date}" onchange="updateDateSelection(this)">
+            <span>
+              <strong>${new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong>
+              <br>
+              <small>${entries.length} entries · ${total}L</small>
+            </span>
+          </label>
+        `;
+      });
+      
+      if (!dates.length) {
+        html = '<div class="empty-state"><p>No daily entries found</p></div>';
+      }
+      
+      document.getElementById('dateGrid').innerHTML = html;
+      multiDateSelection = [];
+      document.getElementById('selectedDatesCount').textContent = '0';
+      document.getElementById('multiDateTotal').textContent = '0L';
+      document.getElementById('multiDateEntries').textContent = '0';
+      openModal('multiDateModal');
+    }
+
+    function updateDateSelection(checkbox) {
+      if (checkbox.checked) {
+        multiDateSelection.push(checkbox.value);
+      } else {
+        multiDateSelection = multiDateSelection.filter(d => d !== checkbox.value);
+      }
+      
+      document.getElementById('selectedDatesCount').textContent = multiDateSelection.length;
+      
+      // Calculate total
+      const region = DB.regions[DB.currentRegion];
+      let total = 0;
+      let entries = 0;
+      multiDateSelection.forEach(date => {
+        const dayEntries = region.dailyLog[date] || [];
+        total += dayEntries.reduce((s, e) => s + e.supplied, 0);
+        entries += dayEntries.length;
+      });
+      
+      document.getElementById('multiDateTotal').textContent = total + 'L';
+      document.getElementById('multiDateEntries').textContent = entries;
+    }
+
+    function generateMultiDateSummary() {
+      if (multiDateSelection.length === 0) {
+        return showToast('Please select at least one date', 'warning');
+      }
+      
+      const region = DB.regions[DB.currentRegion];
+      const allEntries = [];
+      const techTotals = {};
+      const unallocEntries = [];
+      
+      multiDateSelection.sort().forEach(date => {
+        const entries = region.dailyLog[date] || [];
+        entries.forEach(entry => {
+          allEntries.push({ date, ...entry });
+          
+          if (entry.unallocated) {
+            unallocEntries.push({ date, ...entry });
+          } else {
+            if (!techTotals[entry.technician]) {
+              techTotals[entry.technician] = { total: 0, orders: {} };
+            }
+            techTotals[entry.technician].total += entry.supplied;
+            if (entry.orderNo) {
+              techTotals[entry.technician].orders[entry.orderNo] = (techTotals[entry.technician].orders[entry.orderNo] || 0) + entry.supplied;
+            }
+          }
+        });
+      });
+      
+      const totalOrdered = Object.values(region.orders).reduce((s, o) => s + o.totalLiters, 0);
+      const totalSupplied = allEntries.reduce((s, e) => s + e.supplied, 0);
+      
+      let resultsHtml = `
+        <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--space-6);">
+          <div class="stat-tile">
+            <div class="stat-label">Dates Selected</div>
+            <div class="stat-value">${multiDateSelection.length}</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total Ordered</div>
+            <div class="stat-value">${totalOrdered}L</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total Supplied</div>
+            <div class="stat-value" style="color: var(--success-700);">${totalSupplied}L</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Balance</div>
+            <div class="stat-value" style="color: var(--error-700);">${totalOrdered - totalSupplied}L</div>
+          </div>
+        </div>
+      `;
+      
+      resultsHtml += '<h4 class="heading-3" style="margin: var(--space-4) 0;">Technician Breakdown</h4>';
+      
+      if (Object.keys(techTotals).length > 0) {
+        resultsHtml += '<div class="table-container">';
+        resultsHtml += '<table class="table"><thead><tr><th>Technician</th><th>Total Supplied</th><th>Orders</th></tr></thead><tbody>';
+        
+        Object.entries(techTotals).sort((a, b) => b[1].total - a[1].total).forEach(([tech, data]) => {
+          const orderList = Object.entries(data.orders).map(([order, litres]) => `${order}: ${litres}L`).join(', ');
+          resultsHtml += `
+            <tr>
+              <td><strong>${tech}</strong></td>
+              <td>${data.total}L</td>
+              <td><small>${orderList}</small></td>
+            </tr>
+          `;
+        });
+        
+        resultsHtml += '</tbody></table></div>';
+      } else {
+        resultsHtml += '<div class="empty-state"><p>No allocated entries found</p></div>';
+      }
+      
+      if (unallocEntries.length > 0) {
+        resultsHtml += '<h4 class="heading-3" style="margin: var(--space-4) 0;">Unallocated Entries</h4>';
+        resultsHtml += '<div class="table-container">';
+        resultsHtml += '<table class="table"><thead><tr><th>Date</th><th>Technician</th><th>Litres</th><th>Comment</th></tr></thead><tbody>';
+        
+        unallocEntries.forEach(e => {
+          resultsHtml += `
+            <tr>
+              <td>${new Date(e.date).toLocaleDateString('en-GB')}</td>
+              <td>${e.technician}</td>
+              <td>${e.supplied}L</td>
+              <td><small>${e.comment || '—'}</small></td>
+            </tr>
+          `;
+        });
+        
+        resultsHtml += '</tbody></table></div>';
+      }
+      
+      document.getElementById('multiDateResults').innerHTML = resultsHtml;
+      closeModal('multiDateModal');
+      openModal('multiDateResultsModal');
+    }
+
+    function exportMultiDateSummary() {
+      const region = DB.regions[DB.currentRegion];
+      const wb = XLSX.utils.book_new();
+      
+      // Summary sheet
+      const summaryData = [['Date', 'Technician', 'Order', 'Supplied', 'Comment']];
+      multiDateSelection.sort().forEach(date => {
+        const entries = region.dailyLog[date] || [];
+        entries.forEach(e => {
+          summaryData.push([date, e.technician, e.orderNo || 'Unallocated', e.supplied, e.comment || '']);
+        });
+      });
+      
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), 'Multi-Date Summary');
+      XLSX.writeFile(wb, `CCS_Summary_${multiDateSelection.length}_dates.xlsx`);
+      showToast('Summary exported successfully');
+    }
+
+    // ===== MODIFIED ORDERS LIST FUNCTION =====
+    function renderOrdersList() {
+      const container = document.getElementById('ordersListContainer');
+      if (!container) return;
+      
+      const region = DB.regions[DB.currentRegion];
+      let orders = Object.values(region.orders);
+      
+      // Apply status filter
+      orders = orders.filter(o => {
+        const balance = o.totalLiters - o.suppliedTotal;
+        const hasAllocations = Object.keys(o.allocations || {}).length > 0;
+        
+        switch(orderFilterStatus) {
+          case 'open':
+            return balance > 0;
+          case 'closed':
+            return balance <= 0;
+          case 'unassigned':
+            return !hasAllocations;
+          default:
+            return true;
+        }
+      });
+      
+      // Apply tech filter
+      const techFilter = document.getElementById('orderFilterTech')?.value;
+      if (techFilter) {
+        orders = orders.filter(o => Object.keys(o.allocations || {}).includes(techFilter));
+      }
+      
+      // Apply date filters
+      const fromDate = document.getElementById('orderFilterFrom')?.value;
+      const toDate = document.getElementById('orderFilterTo')?.value;
+      
+      if (fromDate) {
+        orders = orders.filter(o => o.createdDate >= fromDate);
+      }
+      
+      if (toDate) {
+        orders = orders.filter(o => o.createdDate <= toDate);
+      }
+      
+      // Populate tech filter dropdown
+      const techSelect = document.getElementById('orderFilterTech');
+      if (techSelect) {
+        const currentValue = techSelect.value;
+        techSelect.innerHTML = '<option value="">All Techs</option>';
+        region.technicians.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t;
+          opt.textContent = t;
+          techSelect.appendChild(opt);
+        });
+        techSelect.value = currentValue;
+      }
+      
+      if (!orders.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-file-lines"></i>
+            <h3>No orders found</h3>
+            <p>${orderFilterStatus === 'open' ? 'No open orders available' : 
+                orderFilterStatus === 'closed' ? 'No closed orders yet' : 
+                orderFilterStatus === 'unassigned' ? 'All orders have technicians assigned' : 
+                'Create your first order to get started'}</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Sort by date (newest first)
+      orders.sort((a, b) => (b.createdDate || '').localeCompare(a.createdDate || ''));
+      
+      let html = '';
+      orders.forEach(order => {
+        const balance = order.totalLiters - order.suppliedTotal;
+        const progress = (order.suppliedTotal / order.totalLiters) * 100;
+        
+        let statusClass = 'status-open';
+        let statusText = 'Open';
+        
+        if (balance <= 0) {
+          statusClass = 'status-closed';
+          statusText = 'Closed';
+        }
+        
+        // Check for overages
+        const hasOverage = Object.entries(order.allocations || {}).some(([tech, alloc]) => {
+          const supplied = Object.values(region.dailyLog).flat()
+            .filter(e => e.orderNo === order.orderNo && e.technician === tech)
+            .reduce((s, e) => s + e.supplied, 0);
+          return supplied > alloc;
+        });
+        
+        if (hasOverage) {
+          statusClass = 'status-over';
+          statusText = 'Overage';
+        }
+        
+        html += `
+          <div class="order-card" data-order-no="${order.orderNo}">
+            <div class="order-header" onclick="toggleOrderBody('${order.orderNo}')">
+              <div class="order-status-indicator ${statusClass}"></div>
+              <div class="order-info">
+                <div class="order-title">${order.orderNo}</div>
+                <div class="order-meta">
+                  <span><i class="fa-regular fa-truck"></i> ${order.vehiclePlate}</span>
+                  <span><i class="fa-regular fa-calendar"></i> ${order.createdDate || '—'}</span>
+                  <span><i class="fa-regular fa-users"></i> ${Object.keys(order.allocations || {}).length} techs</span>
+                </div>
+              </div>
+              <div class="order-stats">
+                <div class="order-progress">
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${progress}%; background: ${progress >= 100 ? 'var(--warning-700)' : progress >= 75 ? 'var(--success-700)' : progress >= 40 ? 'var(--info-700)' : 'var(--error-700)'};"></div>
+                  </div>
+                  <div class="body-small" style="text-align: center; margin-top: 4px;">${order.suppliedTotal}/${order.totalLiters}L</div>
+                </div>
+                <span class="badge ${statusClass === 'status-open' ? 'badge-success' : statusClass === 'status-closed' ? 'badge-warning' : 'badge-error'}">
+                  ${statusText}
+                </span>
+              </div>
+              <i class="fa-regular fa-chevron-down order-chevron" id="chev_${order.orderNo}"></i>
+            </div>
+            <div class="order-body" id="body_${order.orderNo}" style="display: none;">
+              ${renderOrderDetails(order)}
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    function toggleOrderForm() {
+      const form = document.getElementById('orderForm');
+      const chevron = document.getElementById('orderFormChevron');
+      if (!form) return;
+      const isHidden = form.style.display === 'none';
+      form.style.display = isHidden ? 'block' : 'none';
+      if (chevron) chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+    }
+
+    // ===== ORIGINAL FUNCTIONS (Preserved and enhanced) =====
+    function populateRegions() {
+      const sel = document.getElementById('regionSelect');
+      if (!sel) return;
+      sel.innerHTML = '';
+      Object.keys(DB.regions).forEach(r => {
+        const o = document.createElement('option');
+        o.value = r; o.textContent = r; sel.appendChild(o);
+      });
+      sel.value = DB.currentRegion;
+    }
+
+    function changeRegion() {
+      DB.currentRegion = document.getElementById('regionSelect').value;
+      save();
+      populateRegions();
+      renderPage(currentPage);
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <i class="fa-regular ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'}"></i>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+      document.getElementById('mainContent').classList.toggle('expanded');
+    }
+
+    function setupKeyboardShortcuts() {
+      document.addEventListener('keydown', (e) => {
+        // Cmd+K for search
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          document.querySelector('.search-bar input').focus();
+        }
+        
+        // Esc to close modals
+        if (e.key === 'Escape') {
+          document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        }
+        
+        // Cmd+S to save
+        if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+          e.preventDefault();
+          if (currentPage === 'daily') saveDaily();
+        }
+        
+        // Cmd+F for find
+        if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+          e.preventDefault();
+          document.querySelector('.search-bar input').focus();
+        }
+      });
+    }
+
+    function setupContextMenu() {
+      document.addEventListener('contextmenu', (e) => {
+        const orderCard = e.target.closest('.order-card');
+        if (orderCard) {
+          e.preventDefault();
+          const orderNo = orderCard.dataset.orderNo;
+          showContextMenu(e.pageX, e.pageY, orderNo);
+        }
+      });
+    }
+
+    function showContextMenu(x, y, orderNo) {
+      const menu = document.getElementById('contextMenu');
+      menu.innerHTML = `
+        <div class="context-menu-item" onclick="editOrder('${orderNo}')">
+          <i class="fa-regular fa-pen"></i> Edit
+        </div>
+        <div class="context-menu-item" onclick="cloneOrder('${orderNo}')">
+          <i class="fa-regular fa-copy"></i> Clone
+        </div>
+        <div class="context-menu-item" onclick="deleteOrder('${orderNo}')">
+          <i class="fa-regular fa-trash"></i> Delete
+        </div>
+        <div class="context-menu-item" onclick="viewOrderHistory('${orderNo}')">
+          <i class="fa-regular fa-clock"></i> History
+        </div>
+      `;
+      menu.style.left = x + 'px';
+      menu.style.top = y + 'px';
+      menu.classList.add('active');
+      
+      document.addEventListener('click', () => menu.classList.remove('active'), { once: true });
+    }
+
+    // ===== ENHANCED FUNCTIONS =====
+    function loadDailyLog() {
+      const date = document.getElementById('dailyDate').value;
+      if (!date) return showToast('Please select a date', 'warning');
+      
+      const region = DB.regions[DB.currentRegion];
+      const entries = region.dailyLog[date] || [];
+      
+      // Update stats
+      const totalOrdered = Object.values(region.orders).reduce((s, o) => s + o.totalLiters, 0);
+      const totalSupplied = Object.values(region.orders).reduce((s, o) => s + o.suppliedTotal, 0);
+      const dailySupplied = entries.reduce((s, e) => s + e.supplied, 0);
+      
+      document.getElementById('dailyOrdered').textContent = totalOrdered + 'L';
+      document.getElementById('dailySupplied').textContent = dailySupplied + 'L';
+      document.getElementById('dailyBalance').textContent = (totalOrdered - totalSupplied) + 'L';
+      document.getElementById('entryCount').textContent = entries.length + ' entries';
+      
+      renderDailyLog(entries);
+    }
+
+    function renderDailyLog(entries) {
+      const container = document.getElementById('dailyLogContainer');
+      if (!container) return;
+      
+      if (!entries.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-clipboard"></i>
+            <h3>No entries for this date</h3>
+            <p>Add entries above to start tracking fuel supply</p>
+          </div>
+        `;
+        return;
+      }
+      
+      let html = '';
+      entries.forEach((entry, idx) => {
+        const isUnalloc = entry.unallocated;
+        html += `
+          <div class="tech-alloc-row animate-slide-right" style="animation-delay: ${idx * 0.05}s">
+            <div class="tech-avatar">
+              ${entry.technician.charAt(0)}
+            </div>
+            <div class="tech-details">
+              <div class="tech-name">${entry.technician}</div>
+              <div class="tech-plate">
+                ${isUnalloc ? '⚠️ Unallocated' : 'Order: ' + entry.orderNo}
+                ${entry.comment ? ' · 💬 ' + entry.comment : ''}
+              </div>
+            </div>
+            <div class="tech-stats">
+              <span class="stat-badge" style="background: ${isUnalloc ? 'var(--warning-100)' : 'var(--success-100)'}; color: ${isUnalloc ? 'var(--warning-800)' : 'var(--success-800)'};">
+                ${entry.supplied}L
+              </span>
+              <button class="btn btn-icon btn-ghost btn-sm" onclick="openEditEntryModal('${document.getElementById('dailyDate').value}', ${idx})">
+                <i class="fa-regular fa-pen"></i>
+              </button>
+              <button class="btn btn-icon btn-ghost btn-sm" onclick="deleteDailyEntry('${document.getElementById('dailyDate').value}', ${idx})">
+                <i class="fa-regular fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    function addDailyEntry() {
+      const container = document.getElementById('dailyEntriesContainer');
+      const id = 'entry_' + Date.now();
+      
+      const region = DB.regions[DB.currentRegion];
+      let techOptions = '<option value="">Select technician</option>';
+      region.technicians.forEach(t => {
+        techOptions += `<option value="${t}">${t}</option>`;
+      });
+      
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.id = id;
+      card.innerHTML = `
+        <div style="display: flex; justify-content: flex-end; margin-bottom: var(--space-2);">
+          <button class="btn btn-icon btn-ghost btn-sm" onclick="this.closest('.card').remove()">
+            <i class="fa-regular fa-xmark"></i>
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="select-wrapper">
+            <select class="select-field" onchange="techSelected(this, '${id}')">
+              ${techOptions}
+            </select>
+          </div>
+          <div class="input-group">
+            <input type="number" class="input-field" id="supplied_${id}" placeholder=" ">
+            <label class="input-label">Litres</label>
+          </div>
+        </div>
+        <div class="grid grid-cols-4 gap-2" style="margin-top: var(--space-2);" id="details_${id}">
+          <div class="body-small">Order: <span id="orderNo_${id}">—</span></div>
+          <div class="body-small">Vehicle: <span id="vehicle_${id}">—</span></div>
+          <div class="body-small">Allocated: <span id="allocated_${id}">—</span></div>
+          <div class="body-small">Remaining: <span id="remaining_${id}">—</span></div>
+        </div>
+        <div id="commentSection_${id}" style="display: none; margin-top: var(--space-2);">
+          <div class="input-group">
+            <input type="text" class="input-field" id="comment_${id}" placeholder=" ">
+            <label class="input-label">Comment (required for unallocated)</label>
+          </div>
+        </div>
+      `;
+      
+      container.appendChild(card);
+    }
+
+    function techSelected(select, cardId) {
+      const tech = select.value;
+      const card = document.getElementById(cardId);
+      const region = DB.regions[DB.currentRegion];
+      
+      if (!tech) {
+        card.querySelector(`#orderNo_${cardId}`).textContent = '—';
+        card.querySelector(`#vehicle_${cardId}`).textContent = '—';
+        card.querySelector(`#allocated_${cardId}`).textContent = '—';
+        card.querySelector(`#remaining_${cardId}`).textContent = '—';
+        card.querySelector(`#commentSection_${cardId}`).style.display = 'none';
+        return;
+      }
+      
+      // Find open orders where tech has allocation
+      const assignedOrders = Object.values(region.orders).filter(o => 
+        o.status === 'OPEN' && o.allocations[tech]
+      );
+      
+      if (assignedOrders.length === 0) {
+        // Unallocated
+        card.querySelector(`#orderNo_${cardId}`).textContent = 'Unallocated';
+        card.querySelector(`#vehicle_${cardId}`).textContent = '—';
+        card.querySelector(`#allocated_${cardId}`).textContent = '0L';
+        card.querySelector(`#remaining_${cardId}`).textContent = '—';
+        card.querySelector(`#commentSection_${cardId}`).style.display = 'block';
+        card.dataset.unallocated = 'true';
+      } else if (assignedOrders.length === 1) {
+        const order = assignedOrders[0];
+        const supplied = Object.values(region.dailyLog).flat()
+          .filter(e => e.orderNo === order.orderNo && e.technician === tech)
+          .reduce((s, e) => s + e.supplied, 0);
+        const remaining = order.allocations[tech] - supplied;
+        
+        card.querySelector(`#orderNo_${cardId}`).textContent = order.orderNo;
+        card.querySelector(`#vehicle_${cardId}`).textContent = order.vehiclePlate;
+        card.querySelector(`#allocated_${cardId}`).textContent = order.allocations[tech] + 'L';
+        card.querySelector(`#remaining_${cardId}`).textContent = Math.max(0, remaining) + 'L';
+        card.querySelector(`#commentSection_${cardId}`).style.display = 'none';
+        card.dataset.orderNo = order.orderNo;
+        card.dataset.unallocated = 'false';
+      } else {
+        // Multiple orders - show dropdown
+        let options = '<option value="">Select order</option>';
+        assignedOrders.forEach(o => {
+          const supplied = Object.values(region.dailyLog).flat()
+            .filter(e => e.orderNo === o.orderNo && e.technician === tech)
+            .reduce((s, e) => s + e.supplied, 0);
+          const remaining = o.allocations[tech] - supplied;
+          options += `<option value="${o.orderNo}">${o.orderNo} (${remaining}L remaining)</option>`;
+        });
+        
+        const orderSelect = document.createElement('div');
+        orderSelect.className = 'select-wrapper';
+        orderSelect.style.marginTop = 'var(--space-2)';
+        orderSelect.innerHTML = `
+          <select class="select-field" onchange="updateOrderDetails(this, '${cardId}')">
+            ${options}
+          </select>
+        `;
+        
+        const existing = card.querySelector('.order-select-wrapper');
+        if (existing) existing.remove();
+        
+        orderSelect.classList.add('order-select-wrapper');
+        card.querySelector(`#details_${cardId}`).after(orderSelect);
+      }
+    }
+
+    function updateOrderDetails(select, cardId) {
+      const orderNo = select.value;
+      if (!orderNo) return;
+      
+      const card = document.getElementById(cardId);
+      const tech = card.querySelector('select').value;
+      const region = DB.regions[DB.currentRegion];
+      const order = region.orders[orderNo];
+      
+      if (order) {
+        const supplied = Object.values(region.dailyLog).flat()
+          .filter(e => e.orderNo === order.orderNo && e.technician === tech)
+          .reduce((s, e) => s + e.supplied, 0);
+        const remaining = order.allocations[tech] - supplied;
+        
+        card.querySelector(`#orderNo_${cardId}`).textContent = order.orderNo;
+        card.querySelector(`#vehicle_${cardId}`).textContent = order.vehiclePlate;
+        card.querySelector(`#allocated_${cardId}`).textContent = order.allocations[tech] + 'L';
+        card.querySelector(`#remaining_${cardId}`).textContent = Math.max(0, remaining) + 'L';
+        card.dataset.orderNo = order.orderNo;
+        card.dataset.unallocated = 'false';
+      }
+    }
+
+    function saveDaily() {
+      const date = document.getElementById('dailyDate').value;
+      if (!date) return showToast('Please select a date', 'warning');
+      
+      const region = DB.regions[DB.currentRegion];
+      if (!region.dailyLog[date]) region.dailyLog[date] = [];
+      
+      const cards = document.querySelectorAll('#dailyEntriesContainer .card');
+      let saved = 0;
+      let skipped = 0;
+      
+      cards.forEach(card => {
+        const tech = card.querySelector('select').value;
+        const supplied = parseFloat(card.querySelector('input[type="number"]').value);
+        const isUnalloc = card.dataset.unallocated === 'true';
+        
+        if (!tech || !supplied || supplied <= 0) return;
+        
+        if (isUnalloc) {
+          const comment = card.querySelector('input[type="text"]')?.value;
+          if (!comment) {
+            skipped++;
+            card.querySelector('input[type="text"]')?.classList.add('error');
+            return;
+          }
+          region.dailyLog[date].push({
+            technician: tech,
+            supplied,
+            comment,
+            unallocated: true
+          });
+          saved++;
+        } else {
+          const orderNo = card.dataset.orderNo;
+          if (!orderNo) return;
+          
+          const order = region.orders[orderNo];
+          if (!order || order.status === 'CLOSED') return;
+          
+          region.dailyLog[date].push({
+            orderNo,
+            technician: tech,
+            supplied
+          });
+          
+          order.suppliedTotal += supplied;
+          saved++;
+        }
+      });
+      
+      // Update order statuses
+      Object.values(region.orders).forEach(o => {
+        if (o.suppliedTotal >= o.totalLiters) o.status = 'CLOSED';
+      });
+      
+      save();
+      showToast(`Saved ${saved} entries${skipped ? `, ${skipped} skipped` : ''}`);
+      
+      // Clear form
+      document.getElementById('dailyEntriesContainer').innerHTML = '';
+      loadDailyLog();
+      renderDailyHistory();
+      
+      // Check for overages
+      checkForOverages();
+    }
+
+    function checkForOverages() {
+      const region = DB.regions[DB.currentRegion];
+      
+      Object.entries(region.orders).forEach(([orderNo, order]) => {
+        Object.entries(order.allocations || {}).forEach(([tech, alloc]) => {
+          const supplied = Object.values(region.dailyLog).flat()
+            .filter(e => e.orderNo === orderNo && e.technician === tech)
+            .reduce((s, e) => s + e.supplied, 0);
+            
+          if (supplied > alloc && !(order.overageComments && order.overageComments[tech])) {
+            openOverageComment(orderNo, tech);
+          }
+        });
+      });
+    }
+
+    function openEditEntryModal(date, idx) {
+      const region = DB.regions[DB.currentRegion];
+      const entry = region.dailyLog[date][idx];
+      
+      editContext = { date, idx };
+      
+      document.getElementById('editSupplied').value = entry.supplied;
+      
+      if (entry.unallocated) {
+        document.getElementById('editCommentGroup').style.display = 'block';
+        document.getElementById('editComment').value = entry.comment || '';
+      } else {
+        document.getElementById('editCommentGroup').style.display = 'none';
+      }
+      
+      openModal('editModal');
+    }
+
+    function saveEditEntry() {
+      if (!editContext) return;
+      
+      const { date, idx } = editContext;
+      const region = DB.regions[DB.currentRegion];
+      const entry = region.dailyLog[date][idx];
+      
+      const newSupply = parseFloat(document.getElementById('editSupplied').value);
+      if (!newSupply || newSupply <= 0) return showToast('Please enter valid litres', 'warning');
+      
+      const diff = newSupply - entry.supplied;
+      
+      if (!entry.unallocated && entry.orderNo) {
+        const order = region.orders[entry.orderNo];
+        if (order) {
+          order.suppliedTotal += diff;
+        }
+      }
+      
+      entry.supplied = newSupply;
+      
+      if (entry.unallocated) {
+        entry.comment = document.getElementById('editComment').value;
+      }
+      
+      save();
+      closeModal('editModal');
+      loadDailyLog();
+      showToast('Entry updated');
+    }
+
+    function deleteDailyEntry(date, idx) {
+      if (!confirm('Delete this entry?')) return;
+      
+      const region = DB.regions[DB.currentRegion];
+      const entry = region.dailyLog[date][idx];
+      
+      if (!entry.unallocated && entry.orderNo) {
+        const order = region.orders[entry.orderNo];
+        if (order) {
+          order.suppliedTotal -= entry.supplied;
+        }
+      }
+      
+      region.dailyLog[date].splice(idx, 1);
+      if (region.dailyLog[date].length === 0) {
+        delete region.dailyLog[date];
+      }
+      
+      save();
+      loadDailyLog();
+      renderDailyHistory();
+      showToast('Entry deleted');
+    }
+
+    function renderDailyHistory() {
+      const container = document.getElementById('dailyHistoryContainer');
+      if (!container) return;
+      
+      const region = DB.regions[DB.currentRegion];
+      const dates = Object.keys(region.dailyLog).sort().reverse().slice(0, 10);
+      
+      if (!dates.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-clock"></i>
+            <h3>No history yet</h3>
+            <p>Start adding daily entries to see history here</p>
+          </div>
+        `;
+        return;
+      }
+      
+      let html = '';
+      dates.forEach(date => {
+        const entries = region.dailyLog[date];
+        const total = entries.reduce((s, e) => s + e.supplied, 0);
+        
+        html += `
+          <div class="tech-alloc-row" style="cursor: pointer;" onclick="document.getElementById('dailyDate').value='${date}'; loadDailyLog();">
+            <div class="tech-avatar" style="background: var(--info-100); color: var(--info-700);">
+              <i class="fa-regular fa-calendar"></i>
+            </div>
+            <div class="tech-details">
+              <div class="tech-name">${new Date(date).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })}</div>
+              <div class="tech-plate">${entries.length} entries · ${total}L total</div>
+            </div>
+            <div class="tech-stats">
+              <span class="badge badge-info">View</span>
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    // ===== ORDERS FUNCTIONS =====
+    function createOrder() {
+      const orderNo = document.getElementById('orderNo').value.trim();
+      const vehiclePlate = document.getElementById('vehiclePlate').value.trim();
+      const totalLiters = parseFloat(document.getElementById('totalLiters').value);
+      const orderDate = document.getElementById('orderDate').value || new Date().toISOString().slice(0, 10);
+      
+      if (!orderNo || !vehiclePlate || !totalLiters) {
+        return showToast('Please fill all fields', 'warning');
+      }
+      
+      const region = DB.regions[DB.currentRegion];
+      
+      if (region.orders[orderNo]) {
+        return showToast('Order number already exists', 'error');
+      }
+      
+      region.orders[orderNo] = {
+        orderNo,
+        vehiclePlate,
+        totalLiters,
+        suppliedTotal: 0,
+        allocations: {},
+        status: 'OPEN',
+        createdDate: orderDate
+      };
+      
+      save();
+      showToast('Order created successfully');
+      
+      // Clear form
+      document.getElementById('orderNo').value = '';
+      document.getElementById('vehiclePlate').value = '';
+      document.getElementById('totalLiters').value = '';
+      document.getElementById('orderDate').value = '';
+      
+      updateOrderStats();
+      populateAllocOrder();
+      renderOrdersList();
+    }
+
+    function populateAllocOrder() {
+      const sel = document.getElementById('allocOrder');
+      if (!sel) return;
+      
+      sel.innerHTML = '<option value="">Select order</option>';
+      Object.values(DB.regions[DB.currentRegion].orders)
+        .filter(o => o.status === 'OPEN')
+        .forEach(o => {
+          const opt = document.createElement('option');
+          opt.value = o.orderNo;
+          opt.textContent = `${o.orderNo} (${o.vehiclePlate})`;
+          sel.appendChild(opt);
+        });
+    }
+
+    function populateAllocTech() {
+      const sel = document.getElementById('allocTech');
+      if (!sel) return;
+      
+      sel.innerHTML = '<option value="">Select technician</option>';
+      DB.regions[DB.currentRegion].technicians.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        sel.appendChild(opt);
+      });
+    }
+
+    function allocateFuel() {
+      const orderNo = document.getElementById('allocOrder').value;
+      const tech = document.getElementById('allocTech').value;
+      const amount = parseFloat(document.getElementById('allocAmount').value);
+      
+      if (!orderNo || !tech || !amount) {
+        return showToast('Please fill all fields', 'warning');
+      }
+      
+      const region = DB.regions[DB.currentRegion];
+      const order = region.orders[orderNo];
+      
+      if (!order) return showToast('Order not found', 'error');
+      
+      if (order.allocations[tech]) {
+        return showToast('Technician already allocated to this order', 'warning');
+      }
+      
+      const totalAllocated = Object.values(order.allocations).reduce((s, v) => s + v, 0);
+      if (totalAllocated + amount > order.totalLiters) {
+        return showToast('Allocation exceeds order total', 'error');
+      }
+      
+      order.allocations[tech] = amount;
+      save();
+      
+      showToast(`${amount}L allocated to ${tech}`);
+      document.getElementById('allocAmount').value = '';
+      populateAllocOrder();
+      renderOrdersList();
+    }
+
+    function updateOrderStats() {
+      const region = DB.regions[DB.currentRegion];
+      const orders = Object.values(region.orders);
+      
+      const totalOrdered = orders.reduce((s, o) => s + o.totalLiters, 0);
+      const totalSupplied = orders.reduce((s, o) => s + o.suppliedTotal, 0);
+      const openCount = orders.filter(o => o.status === 'OPEN').length;
+      
+      document.getElementById('ordersTotalOrdered').textContent = totalOrdered + 'L';
+      document.getElementById('ordersTotalSupplied').textContent = totalSupplied + 'L';
+      document.getElementById('ordersTotalBalance').textContent = (totalOrdered - totalSupplied) + 'L';
+      document.getElementById('ordersOpenCount').textContent = openCount;
+    }
+
+    function renderOrderDetails(order) {
+      const region = DB.regions[DB.currentRegion];
+      let html = '<div style="margin-bottom: var(--space-4);">';
+      
+      // Allocation rows
+      Object.entries(order.allocations || {}).forEach(([tech, alloc]) => {
+        const supplied = Object.values(region.dailyLog).flat()
+          .filter(e => e.orderNo === order.orderNo && e.technician === tech)
+          .reduce((s, e) => s + e.supplied, 0);
+        
+        const remaining = alloc - supplied;
+        const isOver = supplied > alloc;
+        
+        html += `
+          <div class="tech-alloc-row">
+            <div class="tech-avatar">${tech.charAt(0)}</div>
+            <div class="tech-details">
+              <div class="tech-name">${tech}</div>
+              <div class="tech-plate">${region.technicianPlates[tech] || '—'}</div>
+              <div class="tech-stats">
+                <span class="stat-badge" style="background: var(--info-100); color: var(--info-700);">Alloc: ${alloc}L</span>
+                <span class="stat-badge" style="background: var(--success-100); color: var(--success-700);">Supplied: ${supplied}L</span>
+                <span class="stat-badge" style="background: ${isOver ? 'var(--error-100)' : 'var(--warning-100)'}; color: ${isOver ? 'var(--error-700)' : 'var(--warning-700)'};">
+                  ${isOver ? '+' + (supplied - alloc) + 'L over' : remaining + 'L left'}
+                </span>
+              </div>
+              ${order.overageComments && order.overageComments[tech] ? 
+                `<div class="body-small" style="margin-top: 4px; color: var(--error-700);">💬 ${order.overageComments[tech]}</div>` : ''}
+            </div>
+            <div class="flex gap-2">
+              <button class="btn btn-icon btn-ghost btn-sm" onclick="editAllocation('${order.orderNo}', '${tech}')">
+                <i class="fa-regular fa-pen"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      
+      if (Object.keys(order.allocations || {}).length === 0) {
+        html += '<div class="body-small" style="text-align: center; padding: var(--space-4);">No technicians allocated</div>';
+      }
+      
+      html += `
+        <div style="margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--neutral-200);">
+          <div class="flex gap-2 justify-end">
+            <button class="btn btn-secondary btn-sm" onclick="cloneOrder('${order.orderNo}')">
+              <i class="fa-regular fa-copy"></i> Clone
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="editOrderDate('${order.orderNo}')">
+              <i class="fa-regular fa-pen"></i> Edit Date
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="deleteOrder('${order.orderNo}')">
+              <i class="fa-regular fa-trash"></i> Delete
+            </button>
+          </div>
+        </div>
+      `;
+      
+      return html;
+    }
+
+    function toggleOrderBody(orderNo) {
+      const body = document.getElementById(`body_${orderNo}`);
+      const chev = document.getElementById(`chev_${orderNo}`);
+      
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        chev.style.transform = 'rotate(180deg)';
+      } else {
+        body.style.display = 'none';
+        chev.style.transform = 'rotate(0)';
+      }
+    }
+
+    function editAllocation(orderNo, tech) {
+      const region = DB.regions[DB.currentRegion];
+      const order = region.orders[orderNo];
+      const newAlloc = prompt('Enter new allocation amount (litres):', order.allocations[tech]);
+      
+      if (newAlloc === null) return;
+      
+      const amount = parseFloat(newAlloc);
+      if (isNaN(amount) || amount < 0) return showToast('Please enter a valid number', 'warning');
+      
+      // Check total
+      const otherTotal = Object.entries(order.allocations)
+        .filter(([t]) => t !== tech)
+        .reduce((s, [,v]) => s + v, 0);
+      
+      if (otherTotal + amount > order.totalLiters) {
+        return showToast('Total allocations would exceed order total', 'error');
+      }
+      
+      order.allocations[tech] = amount;
+      save();
+      renderOrdersList();
+      showToast('Allocation updated');
+    }
+
+    function editOrderDate(orderNo) {
+      const region = DB.regions[DB.currentRegion];
+      const order = region.orders[orderNo];
+      const newDate = prompt('Enter new date (YYYY-MM-DD):', order.createdDate);
+      
+      if (newDate) {
+        order.createdDate = newDate;
+        save();
+        renderOrdersList();
+        showToast('Order date updated');
+      }
+    }
+
+    function deleteOrder(orderNo) {
+      if (!confirm(`Delete order ${orderNo}?`)) return;
+      
+      const region = DB.regions[DB.currentRegion];
+      
+      // Remove from daily log
+      Object.keys(region.dailyLog).forEach(date => {
+        region.dailyLog[date] = region.dailyLog[date].filter(e => e.orderNo !== orderNo);
+      });
+      
+      delete region.orders[orderNo];
+      save();
+      
+      renderOrdersList();
+      updateOrderStats();
+      populateAllocOrder();
+      showToast('Order deleted');
+    }
+
+    function cloneOrder(orderNo) {
+      cloneSource = orderNo;
+      const region = DB.regions[DB.currentRegion];
+      const order = region.orders[orderNo];
+      
+      document.getElementById('clonePreview').innerHTML = `
+        <div class="body-small">
+          <strong>Source:</strong> ${order.orderNo}<br>
+          <strong>Vehicle:</strong> ${order.vehiclePlate}<br>
+          <strong>Total:</strong> ${order.totalLiters}L<br>
+          <strong>Allocations:</strong> ${Object.keys(order.allocations).length} technicians
+        </div>
+      `;
+      
+      document.getElementById('cloneOrderDate').value = new Date().toISOString().slice(0, 10);
+      openModal('cloneModal');
+    }
+
+    function confirmClone() {
+      if (!cloneSource) return;
+      
+      const region = DB.regions[DB.currentRegion];
+      const source = region.orders[cloneSource];
+      const newOrderNo = document.getElementById('cloneOrderNo').value.trim();
+      const newDate = document.getElementById('cloneOrderDate').value;
+      
+      if (!newOrderNo) return showToast('Please enter new order number', 'warning');
+      
+      if (region.orders[newOrderNo]) {
+        return showToast('Order number already exists', 'error');
+      }
+      
+      region.orders[newOrderNo] = {
+        orderNo: newOrderNo,
+        vehiclePlate: source.vehiclePlate,
+        totalLiters: source.totalLiters,
+        suppliedTotal: 0,
+        allocations: { ...source.allocations },
+        status: 'OPEN',
+        createdDate: newDate
+      };
+      
+      save();
+      closeModal('cloneModal');
+      renderOrdersList();
+      showToast('Order cloned successfully');
+    }
+
+    // ===== REGIONS FUNCTIONS =====
+    function renderRegionsList() {
+      const container = document.getElementById('regionsList');
+      if (!container) return;
+      
+      let html = '';
+      Object.keys(DB.regions).forEach(r => {
+        const isCurrent = r === DB.currentRegion;
+        const techCount = DB.regions[r].technicians.length;
+        const orderCount = Object.keys(DB.regions[r].orders).length;
+        
+        html += `
+          <div class="tech-alloc-row">
+            <div class="tech-avatar" style="background: var(--accent-100); color: var(--accent-700);">
+              <i class="fa-regular fa-building"></i>
+            </div>
+            <div class="tech-details">
+              <div class="tech-name">${r} ${isCurrent ? '(Current)' : ''}</div>
+              <div class="tech-plate">${techCount} technicians · ${orderCount} orders</div>
+            </div>
+            <div class="tech-stats">
+              <button class="btn btn-icon btn-ghost btn-sm" onclick="openRenameRegion('${r}')">
+                <i class="fa-regular fa-pen"></i>
+              </button>
+              <button class="btn btn-icon btn-ghost btn-sm" onclick="deleteRegion('${r}')">
+                <i class="fa-regular fa-trash"></i>
+              </button>
+              ${!isCurrent ? 
+                `<button class="btn btn-secondary btn-sm" onclick="switchRegion('${r}')">Switch</button>` : 
+                ''}
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+      document.getElementById('regionCount').textContent = Object.keys(DB.regions).length;
+    }
+
+    function renderTechList() {
+      const container = document.getElementById('techListContainer');
+      if (!container) return;
+      
+      const region = DB.regions[DB.currentRegion];
+      
+      if (!region.technicians.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-user"></i>
+            <h3>No technicians</h3>
+            <p>Add technicians to this region</p>
+          </div>
+        `;
+        return;
+      }
+      
+      let html = '';
+      region.technicians.forEach(t => {
+        html += `
+          <div class="tech-alloc-row">
+            <div class="tech-avatar">${t.charAt(0)}</div>
+            <div class="tech-details">
+              <div class="tech-name">${t}</div>
+              <div class="tech-plate">${region.technicianPlates[t] || '—'}</div>
+            </div>
+            <div class="tech-stats">
+              <button class="btn btn-icon btn-ghost btn-sm" onclick="openRenameTech('${t}')">
+                <i class="fa-regular fa-pen"></i>
+              </button>
+              <button class="btn btn-icon btn-ghost btn-sm" onclick="deleteTech('${t}')">
+                <i class="fa-regular fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    function updateRegionStats() {
+      let totalTechs = 0;
+      let totalOrders = 0;
+      
+      Object.values(DB.regions).forEach(r => {
+        totalTechs += r.technicians.length;
+        totalOrders += Object.keys(r.orders).length;
+      });
+      
+      document.getElementById('techCount').textContent = totalTechs;
+      document.getElementById('regionOrderCount').textContent = totalOrders;
+    }
+
+    function addRegion() {
+      const name = document.getElementById('newRegion').value.trim();
+      if (!name) return showToast('Please enter a region name', 'warning');
+      
+      if (DB.regions[name]) return showToast('Region already exists', 'error');
+      
+      DB.regions[name] = { technicians: [], technicianPlates: {}, orders: {}, dailyLog: {} };
+      document.getElementById('newRegion').value = '';
+      
+      save();
+      renderRegionsList();
+      populateRegions();
+      showToast('Region added');
+    }
+
+    function switchRegion(name) {
+      DB.currentRegion = name;
+      save();
+      populateRegions();
+      renderPage(currentPage);
+      showToast(`Switched to ${name}`);
+    }
+
+    function deleteRegion(name) {
+      if (Object.keys(DB.regions).length <= 1) {
+        return showToast('Cannot delete the only region', 'warning');
+      }
+      
+      if (!confirm(`Delete region ${name}?`)) return;
+      
+      delete DB.regions[name];
+      
+      if (DB.currentRegion === name) {
+        DB.currentRegion = Object.keys(DB.regions)[0];
+      }
+      
+      save();
+      renderRegionsList();
+      populateRegions();
+      showToast('Region deleted');
+    }
+
+    function openRenameRegion(name) {
+      renameContext = { type: 'region', name };
+      document.getElementById('renameTitle').textContent = `Rename Region: ${name}`;
+      document.getElementById('renameInput').value = name;
+      openModal('renameModal');
+    }
+
+    function openRenameTech(name) {
+      renameContext = { type: 'tech', name };
+      document.getElementById('renameTitle').textContent = `Rename Technician: ${name}`;
+      document.getElementById('renameInput').value = name;
+      openModal('renameModal');
+    }
+
+    function confirmRename() {
+      if (!renameContext) return;
+      
+      const newName = document.getElementById('renameInput').value.trim();
+      if (!newName) return showToast('Please enter a name', 'warning');
+      
+      if (renameContext.type === 'region') {
+        const oldName = renameContext.name;
+        if (newName === oldName) {
+          closeModal('renameModal');
+          return;
+        }
+        
+        if (DB.regions[newName]) return showToast('Region already exists', 'error');
+        
+        DB.regions[newName] = DB.regions[oldName];
+        delete DB.regions[oldName];
+        
+        if (DB.currentRegion === oldName) {
+          DB.currentRegion = newName;
+        }
+      } else {
+        const oldName = renameContext.name;
+        
+        Object.values(DB.regions).forEach(r => {
+          // Update technicians list
+          const idx = r.technicians.indexOf(oldName);
+          if (idx !== -1) {
+            r.technicians[idx] = newName;
+          }
+          
+          // Update plates
+          if (r.technicianPlates[oldName]) {
+            r.technicianPlates[newName] = r.technicianPlates[oldName];
+            delete r.technicianPlates[oldName];
+          }
+          
+          // Update allocations
+          Object.values(r.orders).forEach(o => {
+            if (o.allocations[oldName]) {
+              o.allocations[newName] = o.allocations[oldName];
+              delete o.allocations[oldName];
+            }
+            
+            if (o.overageComments && o.overageComments[oldName]) {
+              o.overageComments[newName] = o.overageComments[oldName];
+              delete o.overageComments[oldName];
+            }
+          });
+          
+          // Update daily log
+          Object.values(r.dailyLog).forEach(entries => {
+            entries.forEach(e => {
+              if (e.technician === oldName) e.technician = newName;
+            });
+          });
+        });
+      }
+      
+      save();
+      closeModal('renameModal');
+      renderPage(currentPage);
+      showToast('Renamed successfully');
+    }
+
+    function addTechnician() {
+      const name = document.getElementById('techName').value.trim();
+      const plate = document.getElementById('techPlate').value.trim();
+      
+      if (!name || !plate) return showToast('Please fill all fields', 'warning');
+      
+      const region = DB.regions[DB.currentRegion];
+      
+      if (region.technicians.includes(name)) {
+        return showToast('Technician already exists', 'error');
+      }
+      
+      region.technicians.push(name);
+      region.technicianPlates[name] = plate;
+      
+      document.getElementById('techName').value = '';
+      document.getElementById('techPlate').value = '';
+      
+      save();
+      renderTechList();
+      populateAllocTech();
+      showToast('Technician added');
+    }
+
+    function deleteTech(name) {
+      if (!confirm(`Remove technician ${name}?`)) return;
+      
+      const region = DB.regions[DB.currentRegion];
+      
+      region.technicians = region.technicians.filter(t => t !== name);
+      delete region.technicianPlates[name];
+      
+      // Remove from allocations but keep history
+      Object.values(region.orders).forEach(o => {
+        delete o.allocations[name];
+      });
+      
+      save();
+      renderTechList();
+      populateAllocTech();
+      showToast('Technician removed');
+    }
+
+    // ===== REPORTS FUNCTIONS =====
+    function renderUnallocReport() {
+      const container = document.getElementById('unallocReportContainer');
+      if (!container) return;
+      
+      const region = DB.regions[DB.currentRegion];
+      const entries = [];
+      let total = 0;
+      
+      Object.entries(region.dailyLog).forEach(([date, dayEntries]) => {
+        dayEntries.filter(e => e.unallocated).forEach(e => {
+          entries.push({ date, ...e });
+          total += e.supplied;
+        });
+      });
+      
+      document.getElementById('unallocTotal').textContent = total + 'L';
+      
+      if (!entries.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-circle-check"></i>
+            <h3>No unallocated entries</h3>
+            <p>All fuel supplies are properly allocated</p>
+          </div>
+        `;
+        return;
+      }
+      
+      entries.sort((a, b) => b.date.localeCompare(a.date));
+      
+      let html = '';
+      entries.forEach(e => {
+        html += `
+          <div class="tech-alloc-row">
+            <div class="tech-avatar" style="background: var(--warning-100); color: var(--warning-700);">
+              <i class="fa-regular fa-triangle-exclamation"></i>
+            </div>
+            <div class="tech-details">
+              <div class="tech-name">${e.technician}</div>
+              <div class="tech-plate">${e.date} · ${e.comment || 'No comment'}</div>
+            </div>
+            <div class="tech-stats">
+              <span class="stat-badge" style="background: var(--warning-100); color: var(--warning-700);">
+                ${e.supplied}L
+              </span>
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    function exportOrders() {
+      const wb = XLSX.utils.book_new();
+      
+      // Orders sheet
+      const ordersData = [['Region', 'Order', 'Vehicle', 'Total', 'Supplied', 'Balance', 'Status']];
+      Object.entries(DB.regions).forEach(([rName, r]) => {
+        Object.values(r.orders).forEach(o => {
+          ordersData.push([rName, o.orderNo, o.vehiclePlate, o.totalLiters, o.suppliedTotal, o.totalLiters - o.suppliedTotal, o.status]);
+        });
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ordersData), 'Orders');
+      
+      // Daily log sheet
+      const logData = [['Region', 'Date', 'Technician', 'Order', 'Supplied', 'Comment']];
+      Object.entries(DB.regions).forEach(([rName, r]) => {
+        Object.entries(r.dailyLog).forEach(([date, entries]) => {
+          entries.forEach(e => {
+            logData.push([rName, date, e.technician, e.orderNo || 'Unallocated', e.supplied, e.comment || '']);
+          });
+        });
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(logData), 'Daily Log');
+      
+      XLSX.writeFile(wb, `CCS_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      showToast('Report exported successfully');
+    }
+
+    // ===== LEADERBOARD FUNCTIONS =====
+    function populateLbRegionFilter() {
+      const sel = document.getElementById('lbRegionFilter');
+      if (!sel) return;
+      
+      const current = sel.value;
+      sel.innerHTML = '<option value="">All Regions</option>';
+      Object.keys(DB.regions).forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r;
+        opt.textContent = r;
+        sel.appendChild(opt);
+      });
+      if (current) sel.value = current;
+    }
+
+    function renderLeaderboardList() {
+      const container = document.getElementById('leaderboardListContainer');
+      if (!container) return;
+      
+      const regionFilter = document.getElementById('lbRegionFilter')?.value;
+      const dayFilter = parseInt(document.getElementById('lbDateFilter')?.value) || 0;
+      const cutoff = dayFilter ? new Date(Date.now() - dayFilter * 86400000).toISOString().slice(0, 10) : null;
+      
+      // Aggregate data
+      const techData = {};
+      let totalLitres = 0;
+      
+      Object.entries(DB.regions).forEach(([rName, r]) => {
+        if (regionFilter && rName !== regionFilter) return;
+        
+        Object.entries(r.dailyLog).forEach(([date, entries]) => {
+          if (cutoff && date < cutoff) return;
+          
+          entries.forEach(e => {
+            if (!techData[e.technician]) {
+              techData[e.technician] = { litres: 0, region: rName };
+            }
+            techData[e.technician].litres += e.supplied;
+            totalLitres += e.supplied;
+          });
+        });
+      });
+      
+      const sorted = Object.entries(techData).sort((a, b) => b[1].litres - a[1].litres);
+      
+      document.getElementById('leaderboardTotal').textContent = totalLitres + 'L';
+      document.getElementById('activeTechs').textContent = sorted.length;
+      document.getElementById('topPerformer').textContent = sorted[0]?.[0] || '—';
+      
+      if (!sorted.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-trophy"></i>
+            <h3>No data available</h3>
+            <p>Start adding supply entries to see the leaderboard</p>
+          </div>
+        `;
+        return;
+      }
+      
+      const max = sorted[0][1].litres;
+      
+      let html = '';
+      sorted.forEach(([tech, data], idx) => {
+        const percentage = (data.litres / max) * 100;
+        const rankClass = idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : '';
+        
+        html += `
+          <div class="leaderboard-card" onclick="openTechHistory('${tech}')">
+            <div class="rank-badge ${rankClass}">#${idx + 1}</div>
+            <div class="tech-details" style="flex: 1;">
+              <div class="tech-name">${tech}</div>
+              <div class="tech-plate">📍 ${data.region}</div>
+              <div class="lb-bar-container" style="margin-top: 8px;">
+                <div class="lb-bar-fill" style="width: ${percentage}%;"></div>
+              </div>
+            </div>
+            <div class="stat-value" style="font-size: 1.25rem;">${data.litres.toFixed(1)}L</div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    function openTechHistory(tech) {
+      const entries = [];
+      
+      Object.entries(DB.regions).forEach(([rName, r]) => {
+        Object.entries(r.dailyLog).forEach(([date, dayEntries]) => {
+          dayEntries.filter(e => e.technician === tech).forEach(e => {
+            entries.push({ ...e, date, region: rName });
+          });
+        });
+      });
+      
+      entries.sort((a, b) => b.date.localeCompare(a.date));
+      
+      const total = entries.reduce((s, e) => s + e.supplied, 0);
+      const days = new Set(entries.map(e => e.date)).size;
+      const orders = new Set(entries.filter(e => e.orderNo).map(e => e.orderNo)).size;
+      
+      document.getElementById('techHistoryTitle').textContent = `${tech} - History`;
+      document.getElementById('techTotal').textContent = total.toFixed(1) + 'L';
+      document.getElementById('techDays').textContent = days;
+      document.getElementById('techOrders').textContent = orders;
+      
+      let html = '';
+      entries.forEach(e => {
+        html += `
+          <div class="tech-alloc-row">
+            <div class="tech-avatar" style="background: ${e.unallocated ? 'var(--warning-100)' : 'var(--success-100)'}; color: ${e.unallocated ? 'var(--warning-700)' : 'var(--success-700)'};">
+              ${e.unallocated ? '!' : '✓'}
+            </div>
+            <div class="tech-details">
+              <div class="tech-name">${new Date(e.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+              <div class="tech-plate">
+                ${e.unallocated ? 'Unallocated' : 'Order: ' + e.orderNo} · 📍 ${e.region}
+                ${e.comment ? ' · 💬 ' + e.comment : ''}
+              </div>
+            </div>
+            <div class="tech-stats">
+              <span class="stat-badge" style="background: ${e.unallocated ? 'var(--warning-100)' : 'var(--success-100)'}; color: ${e.unallocated ? 'var(--warning-700)' : 'var(--success-700)'};">
+                ${e.supplied}L
+              </span>
+            </div>
+          </div>
+        `;
+      });
+      
+      document.getElementById('techHistoryList').innerHTML = html;
+      openModal('techHistoryModal');
+    }
+
+    // ===== OVERAGE FUNCTIONS =====
+    function openOverageComment(orderNo, tech) {
+      const region = DB.regions[DB.currentRegion];
+      const order = region.orders[orderNo];
+      
+      const alloc = order.allocations[tech] || 0;
+      const supplied = Object.values(region.dailyLog).flat()
+        .filter(e => e.orderNo === orderNo && e.technician === tech)
+        .reduce((s, e) => s + e.supplied, 0);
+      
+      overageContext = { orderNo, tech };
+      
+      document.getElementById('overageMeta').innerHTML = `
+        <strong>${tech}</strong> supplied <strong style="color: var(--error-700);">${supplied}L</strong> 
+        against allocation of <strong>${alloc}L</strong> 
+        (${(supplied - alloc).toFixed(1)}L over)
+      `;
+      
+      document.getElementById('overageComment').value = order.overageComments?.[tech] || '';
+      openModal('overageModal');
+    }
+
+    function saveOverageComment() {
+      if (!overageContext) return;
+      
+      const { orderNo, tech } = overageContext;
+      const comment = document.getElementById('overageComment').value.trim();
+      
+      if (!comment) return showToast('Please enter a comment', 'warning');
+      
+      const region = DB.regions[DB.currentRegion];
+      const order = region.orders[orderNo];
+      
+      if (!order.overageComments) order.overageComments = {};
+      order.overageComments[tech] = comment;
+      
+      save();
+      closeModal('overageModal');
+      renderOrdersList();
+      showToast('Overage comment saved');
+    }
+
+    // ===== SUMMARY MODAL =====
+    function openSummaryModal() {
+      const date = document.getElementById('dailyDate').value;
+      if (!date) return showToast('Please select a date', 'warning');
+      
+      const region = DB.regions[DB.currentRegion];
+      const entries = region.dailyLog[date] || [];
+      
+      const totalOrdered = Object.values(region.orders).reduce((s, o) => s + o.totalLiters, 0);
+      const totalSupplied = Object.values(region.orders).reduce((s, o) => s + o.suppliedTotal, 0);
+      
+      document.getElementById('summaryTotalOrdered').textContent = totalOrdered + 'L';
+      document.getElementById('summaryTotalSupplied').textContent = totalSupplied + 'L';
+      document.getElementById('summaryBalance').textContent = (totalOrdered - totalSupplied) + 'L';
+      document.getElementById('summaryEntries').textContent = entries.length;
+      
+      let html = '';
+      entries.forEach(e => {
+        html += `
+          <tr>
+            <td>${e.date || date}</td>
+            <td>${e.technician}</td>
+            <td>${e.orderNo || 'Unallocated'}</td>
+            <td>${e.supplied}L</td>
+            <td>
+              <span class="badge ${e.unallocated ? 'badge-warning' : 'badge-success'}">
+                ${e.unallocated ? 'Unallocated' : 'Allocated'}
+              </span>
+            </td>
+          </tr>
+        `;
+      });
+      
+      document.getElementById('summaryTableBody').innerHTML = html;
+      openModal('summaryModal');
+    }
+
+    // ===== BACKUP FUNCTIONS =====
+    function backupData() {
+      const json = JSON.stringify(DB, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CCS_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      localStorage.setItem('ccs_last_backup', new Date().toISOString());
+      renderBackupStatus();
+      showToast('Backup created successfully');
+    }
+
+    function restoreData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed.regions || !parsed.currentRegion) {
+            return showToast('Invalid backup file', 'error');
+          }
+          
+          if (!confirm('This will replace all current data. Continue?')) return;
+          
+          DB = parsed;
+          save();
+          renderPage(currentPage);
+          populateRegions();
+          showToast('Data restored successfully');
+        } catch {
+          showToast('Failed to read backup file', 'error');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function renderBackupStatus() {
+      const indicator = document.getElementById('backupIndicator');
+      if (!indicator) return;
+      
+      const lastRaw = localStorage.getItem('ccs_last_backup');
+      if (!lastRaw) {
+        indicator.innerHTML = '<i class="fa-regular fa-cloud"></i><span>No backup</span>';
+        indicator.classList.add('badge-warning');
+        return;
+      }
+      
+      const last = new Date(lastRaw);
+      const daysSince = Math.floor((Date.now() - last) / 86400000);
+      
+      if (daysSince >= 7) {
+        indicator.innerHTML = `<i class="fa-regular fa-cloud-exclamation"></i><span>Backup ${daysSince}d ago</span>`;
+        indicator.classList.add('badge-warning');
+      } else {
+        indicator.innerHTML = `<i class="fa-regular fa-cloud-check"></i><span>Backed up today</span>`;
+        indicator.classList.add('badge-info');
+      }
+    }
+
+    // ===== GLOBAL SEARCH =====
+    function handleGlobalSearch() {
+      clearTimeout(searchTimeout);
+      const query = document.getElementById('globalSearch').value.toLowerCase().trim();
+      
+      if (!query) return;
+      
+      searchTimeout = setTimeout(() => {
+        const results = [];
+        
+        // Search orders
+        Object.entries(DB.regions).forEach(([rName, r]) => {
+          Object.values(r.orders).forEach(o => {
+            if (o.orderNo.toLowerCase().includes(query) || o.vehiclePlate.toLowerCase().includes(query)) {
+              results.push({ type: 'order', region: rName, data: o });
+            }
+          });
+          
+          // Search technicians
+          r.technicians.forEach(t => {
+            if (t.toLowerCase().includes(query)) {
+              results.push({ type: 'tech', region: rName, data: t });
+            }
+          });
+        });
+        
+        if (results.length > 0) {
+          showSearchResults(results);
+        }
+      }, 300);
+    }
+
+    function showSearchResults(results) {
+      // Implement search results dropdown
+      console.log('Search results:', results);
+    }
+
+    // ===== INITIALIZE =====
+    init();
+  </script>
+</body>
+</html>
