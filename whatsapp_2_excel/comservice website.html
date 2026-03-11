@@ -1696,6 +1696,22 @@
       transform: scale(1.01);
     }
     
+    .supply-log-row:hover {
+      border-color: var(--neutral-300) !important;
+      box-shadow: var(--shadow-sm);
+      transform: translateX(2px);
+    }
+    
+    .supply-log-row.drag-over {
+      border-color: var(--accent-500) !important;
+      background: var(--accent-50) !important;
+      transform: scale(1.01);
+    }
+    
+    .supply-log-row:active {
+      cursor: grabbing;
+    }
+    
     .tech-alloc-row:hover {
       border-color: var(--neutral-300);
       box-shadow: var(--shadow-sm);
@@ -2537,12 +2553,14 @@
     <main class="main-content" id="mainContent">
       <!-- Top Bar -->
       <div class="top-bar">
-        <div class="search-bar">
-          <i class="fa-regular fa-magnifying-glass"></i>
-          <input type="text" placeholder="Search orders, technicians..." id="globalSearch" oninput="handleGlobalSearch()" autocomplete="off">
-          <span class="kbd">⌘K</span>
+        <div style="position:relative;flex:1;min-width:0;max-width:480px;">
+          <div class="search-bar">
+            <i class="fa-regular fa-magnifying-glass"></i>
+            <input type="text" placeholder="Search orders, technicians..." id="globalSearch" oninput="handleGlobalSearch()" autocomplete="off">
+            <span class="kbd">⌘K</span>
+          </div>
+          <div id="searchDropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:white;border:1px solid var(--neutral-200);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:999;max-height:380px;overflow-y:auto;"></div>
         </div>
-        <div id="searchDropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"></div>
 
         <div class="flex items-center gap-3">
           <!-- Notifications Bell -->
@@ -2607,19 +2625,19 @@
       <i class="fa-regular fa-plus"></i>
     </button>
     <div class="fab-menu" id="fabMenu">
-      <button class="fab-item" onclick="addDailyEntry(); toggleFabMenu()">
+      <button class="fab-item" onclick="toggleFabMenu(); fabGoAddEntry()">
         <i class="fa-regular fa-calendar-plus"></i>
         <span>Add Entry</span>
       </button>
-      <button class="fab-item" onclick="createOrder(); toggleFabMenu()">
+      <button class="fab-item" onclick="toggleFabMenu(); fabGoCreateOrder()">
         <i class="fa-regular fa-file-lines"></i>
         <span>Create Order</span>
       </button>
-      <button class="fab-item" onclick="openSummaryModal(); toggleFabMenu()">
+      <button class="fab-item" onclick="toggleFabMenu(); fabGoSummary()">
         <i class="fa-regular fa-chart-pie"></i>
         <span>Summary</span>
       </button>
-      <button class="fab-item" onclick="openTargetModal(); toggleFabMenu()">
+      <button class="fab-item" onclick="toggleFabMenu(); openTargetModal()">
         <i class="fa-regular fa-bullseye"></i>
         <span>Set Target</span>
       </button>
@@ -3395,6 +3413,37 @@
       if (menu) menu.classList.toggle('open');
     }
 
+    function fabGoAddEntry() {
+      if (currentPage !== 'daily') {
+        setPage('daily', null);
+        setTimeout(() => addDailyEntry(), 400);
+      } else {
+        addDailyEntry();
+      }
+    }
+
+    function fabGoCreateOrder() {
+      if (currentPage !== 'orders') {
+        setPage('orders', null);
+        setTimeout(() => { 
+          const form = document.getElementById('orderForm');
+          if (form && form.style.display === 'none') toggleOrderForm();
+        }, 400);
+      } else {
+        const form = document.getElementById('orderForm');
+        if (form && form.style.display === 'none') toggleOrderForm();
+      }
+    }
+
+    function fabGoSummary() {
+      if (currentPage !== 'daily') {
+        setPage('daily', null);
+        setTimeout(() => openSummaryModal(), 400);
+      } else {
+        openSummaryModal();
+      }
+    }
+
     // ===== MOBILE NAV =====
     function mobileNav(page, el) {
       document.querySelectorAll('.mobile-nav-item').forEach(b => b.classList.remove('active'));
@@ -4047,63 +4096,85 @@
         });
       }
 
-      const mkSortIcon = (field) => {
+      const mkSortBtn = (field, label) => {
         const active = sortState.field === field;
-        const cls = active ? (sortState.direction === 'asc' ? 'sort-asc' : 'sort-desc') : '';
         const icon = active ? (sortState.direction === 'asc' ? '↑' : '↓') : '↕';
-        return `<th class="sortable ${cls}" onclick="sortDailyLog('${field}')">${
-          field === 'technician' ? 'Technician' : field === 'supplied' ? 'Supplied' : ''
-        } <span class="sort-icon">${icon}</span></th>`;
+        return `<button onclick="sortDailyLog('${field}')" style="
+          background:${active ? 'var(--accent-50)' : 'var(--neutral-100)'};
+          border:1px solid ${active ? 'var(--accent-300)' : 'var(--neutral-200)'};
+          color:${active ? 'var(--accent-700)' : 'var(--neutral-600)'};
+          border-radius:var(--radius-full);padding:4px 12px;font-size:0.72rem;
+          font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+          letter-spacing:0.02em;transition:all 150ms;">
+          ${label} <span>${icon}</span>
+        </button>`;
       };
+
+      // Totals summary bar
+      const totalSupplied = sorted.reduce((s, e) => s + e.supplied, 0);
+      const allocCount = sorted.filter(e => !e.unallocated).length;
+      const unallocCount = sorted.filter(e => e.unallocated).length;
 
       let rowsHtml = '';
       sorted.forEach((entry, idx) => {
         const origIdx = entry._origIdx;
         const isUnalloc = entry.unallocated;
         const c = techColor(entry.technician);
+        const colorMap = ['#3D8662','#4F86B0','#C23B4C','#D47A3E','#6b3a9b','#3a809b','#9b3a7a','#5a9b3a'];
+        const accentColor = colorMap[c];
         
         rowsHtml += `
-          <tr class="tech-alloc-row" draggable="true" data-idx="${origIdx}" data-date="${dateVal}"
-              ondragstart="dragStart(event, ${origIdx})" ondragover="dragOver(event)" 
-              ondrop="dragDrop(event)" ondragleave="dragLeave(event)">
-            <td class="border-none p-0" style="width:16px;">
-              <span class="drag-handle"><i class="fa-regular fa-grip-dots-vertical"></i></span>
-            </td>
-            <td class="border-none p-0" style="width:40px;">
-              ${techAvatarHtml(entry.technician)}
-            </td>
-            <td class="border-none p-0" style="flex:1;">
-              <div class="tech-name">${entry.technician}</div>
-              <div class="tech-plate">${isUnalloc ? '⚠️ Unallocated' : 'Order: ' + entry.orderNo}${entry.comment ? ' · 💬 ' + entry.comment : ''}</div>
-            </td>
-            <td class="border-none p-0">
-              <div class="tech-stats">
-                <span class="stat-badge inline-editable" 
-                  style="background:${isUnalloc ? 'var(--status-warning-bg)' : 'var(--status-success-bg)'}; color:${isUnalloc ? 'var(--status-warning)' : 'var(--status-success)'};"
-                  title="Click to edit" onclick="startInlineEdit(this,'${dateVal}',${origIdx})">${entry.supplied}L</span>
-                <button class="btn btn-icon btn-ghost btn-sm" onclick="deleteDailyEntry('${dateVal}',${origIdx})">
-                  <i class="fa-regular fa-trash"></i>
-                </button>
+          <div class="supply-log-row" draggable="true" data-idx="${origIdx}" data-date="${dateVal}"
+               ondragstart="dragStart(event, ${origIdx})" ondragover="dragOver(event)" 
+               ondrop="dragDrop(event)" ondragleave="dragLeave(event)"
+               style="display:flex;align-items:center;gap:12px;padding:10px 14px;
+                      background:white;border-radius:var(--radius-lg);
+                      border:1px solid var(--neutral-200);margin-bottom:6px;
+                      border-left:3px solid ${accentColor};
+                      transition:all 150ms;cursor:grab;position:relative;overflow:hidden;">
+            <span class="drag-handle" style="color:var(--neutral-300);font-size:0.85rem;flex-shrink:0;">
+              <i class="fa-regular fa-grip-dots-vertical"></i>
+            </span>
+            ${techAvatarHtml(entry.technician, `style="width:34px;height:34px;font-size:0.8rem;flex-shrink:0;"`)}
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;font-size:0.85rem;color:var(--neutral-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${entry.technician}</div>
+              <div style="font-size:0.72rem;color:var(--neutral-500);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                ${isUnalloc
+                  ? `<span style="color:var(--status-warning);font-weight:600;">⚠ Unallocated</span>${entry.comment ? ' · ' + entry.comment : ''}`
+                  : `<i class="fa-regular fa-file-lines" style="margin-right:3px;"></i>${entry.orderNo}${entry.comment ? ' · 💬 ' + entry.comment : ''}`
+                }
               </div>
-            </td>
-          </tr>
+            </div>
+            <span class="inline-editable" title="Click to edit"
+              onclick="startInlineEdit(this,'${dateVal}',${origIdx})"
+              style="font-family:var(--font-mono);font-weight:700;font-size:0.9rem;
+                     padding:4px 10px;border-radius:var(--radius-full);cursor:pointer;
+                     background:${isUnalloc ? 'var(--status-warning-bg)' : 'var(--status-success-bg)'};
+                     color:${isUnalloc ? 'var(--status-warning)' : 'var(--status-success)'};
+                     border:1px solid ${isUnalloc ? 'rgba(217,119,6,0.2)' : 'rgba(22,163,74,0.2)'};
+                     white-space:nowrap;flex-shrink:0;">${entry.supplied}L</span>
+            <button class="btn btn-icon btn-ghost btn-sm" onclick="deleteDailyEntry('${dateVal}',${origIdx})"
+              style="width:30px;height:30px;flex-shrink:0;color:var(--neutral-400);">
+              <i class="fa-regular fa-trash"></i>
+            </button>
+          </div>
         `;
       });
 
       container.innerHTML = `
-        <div class="table-container" style="overflow:visible;">
-          <table class="table" style="border-collapse:collapse;">
-            <thead>
-              <tr>
-                <th style="width:16px;"></th>
-                <th style="width:40px;"></th>
-                ${mkSortIcon('technician')}
-                ${mkSortIcon('supplied')}
-              </tr>
-            </thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>
-        </div>`;
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span style="font-size:0.72rem;font-weight:600;color:var(--neutral-500);text-transform:uppercase;letter-spacing:0.04em;">Sort:</span>
+            ${mkSortBtn('technician','Technician')}
+            ${mkSortBtn('supplied','Litres')}
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            ${allocCount > 0 ? `<span style="font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:var(--radius-full);background:var(--status-success-bg);color:var(--status-success);">✓ ${allocCount} allocated</span>` : ''}
+            ${unallocCount > 0 ? `<span style="font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:var(--radius-full);background:var(--status-warning-bg);color:var(--status-warning);">⚠ ${unallocCount} unallocated</span>` : ''}
+            <span style="font-family:var(--font-mono);font-weight:700;font-size:0.85rem;padding:3px 12px;border-radius:var(--radius-full);background:var(--accent-50);color:var(--accent-700);border:1px solid var(--accent-200);">${totalSupplied}L total</span>
+          </div>
+        </div>
+        <div id="supplyLogRows">${rowsHtml}</div>`;
     }
 
     function sortDailyLog(field) {
@@ -4129,18 +4200,18 @@
     function dragOver(e) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-      const row = e.target.closest('tr[data-idx]');
+      const row = e.target.closest('[data-idx]');
       if (row) row.classList.add('drag-over');
     }
     
     function dragLeave(e) {
-      const row = e.target.closest('tr[data-idx]');
+      const row = e.target.closest('[data-idx]');
       if (row) row.classList.remove('drag-over');
     }
     
     function dragDrop(e) {
       e.preventDefault();
-      const row = e.target.closest('tr[data-idx]');
+      const row = e.target.closest('[data-idx]');
       if (row) row.classList.remove('drag-over');
       
       const destIdx = parseInt(row?.dataset.idx);
@@ -6034,10 +6105,10 @@
               <thead>
                 <tr>
                   <th>Technician</th>
-                  <th style="text-align:right;">Total Orders (L)</th>
-                  <th style="text-align:right;">Supplied Today (L)</th>
-                  <th style="text-align:right;">Total Supplied (L)</th>
-                  <th style="text-align:right;">Balance (L)</th>
+                  <th style="text-align:right;">Total Orders </th>
+                  <th style="text-align:right;">Supplied Today </th>
+                  <th style="text-align:right;">Total Supplied </th>
+                  <th style="text-align:right;">Balance </th>
                 </tr>
               </thead>
               <tbody>
@@ -6064,7 +6135,7 @@
                 </div>
               </td>
               <td style="text-align:right;"><span class="font-mono font-bold">${s.totalAllocated.toLocaleString()}L</span></td>
-              <td style="text-align:right;"><span class="font-mono font-bold ${s.suppliedToday > 0 ? 'text-accent-700' : 'text-neutral-400'}">${s.suppliedToday > 0 ? '+' : ''}${s.suppliedToday.toLocaleString()}L</span></td>
+              <td style="text-align:right;"><span class="font-mono font-bold ${s.suppliedToday > 0 ? 'text-accent-700' : 'text-neutral-400'}">${s.suppliedToday > 0 ? '' : ''}${s.suppliedToday.toLocaleString()}L</span></td>
               <td style="text-align:right;"><span class="font-mono font-bold text-success-700">${s.suppliedAllTime.toLocaleString()}L</span></td>
               <td style="text-align:right;"><span class="font-mono font-bold ${balance <= 0 ? 'text-warning-700' : 'text-danger-700'}">${balance.toLocaleString()}L</span></td>
             </tr>
@@ -6285,7 +6356,7 @@
       if (autoBackupTimer) clearInterval(autoBackupTimer);
       autoBackupTimer = setInterval(() => {
         performAutoBackup();
-      }, 14400000); // 4 hours
+      }, 21600000); // 6 hours
       setTimeout(() => {
         performAutoBackup();
       }, 5000);
@@ -6389,6 +6460,7 @@
     // ===== SEARCH KEYBOARD NAVIGATION =====
     let searchKeyIdx = -1;
     let searchItems = [];
+    let searchTimeout = null;
 
     function handleGlobalSearch() {
       clearTimeout(searchTimeout);
