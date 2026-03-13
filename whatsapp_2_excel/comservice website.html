@@ -2535,9 +2535,17 @@
           <i class="fa-regular fa-trophy"></i>
           <span>Leaderboard</span>
         </button>
+        <button class="nav-item" onclick="setPage('cycles', this)">
+          <i class="fa-regular fa-rotate"></i>
+          <span>Cycle History</span>
+        </button>
       </div>
 
       <div class="mt-auto pt-6 flex flex-col gap-1">
+        <button class="nav-item" onclick="openEndCycleModal()" style="background:rgba(196,30,58,0.08);color:var(--accent-600);border:1px dashed var(--accent-400);border-radius:var(--radius-md);">
+          <i class="fa-regular fa-flag-checkered"></i>
+          <span>End Cycle</span>
+        </button>
         <div class="nav-item" onclick="toggleDarkMode()" id="darkModeBtn">
           <i class="fa-regular fa-moon"></i>
           <span>Dark Mode</span>
@@ -2557,7 +2565,10 @@
           <div class="search-bar">
             <i class="fa-regular fa-magnifying-glass"></i>
             <input type="text" placeholder="Search orders, technicians..." id="globalSearch" oninput="handleGlobalSearch()" autocomplete="off">
-            <span class="kbd">⌘K</span>
+     <span class="kbd">
+  <img src="./icons8-search.svg" alt="search" width="16" height="16" />
+
+</span>
           </div>
           <div id="searchDropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:white;border:1px solid var(--neutral-200);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:999;max-height:380px;overflow-y:auto;"></div>
         </div>
@@ -2599,7 +2610,7 @@
             <i class="fa-regular fa-circle-question"></i>
             <div class="tooltip-content">
               <h4>Keyboard Shortcuts</h4>
-              <p>⌘K - Search<br>⌘S - Save<br>ESC - Close<br>⌘/ - All shortcuts</p>
+              <p>K - Search<br>S - Save<br>ESC - Close<br>/ - All shortcuts</p>
             </div>
           </div>
         </div>
@@ -2616,7 +2627,7 @@
     <button class="mobile-nav-item active" onclick="mobileNav('daily', this)"><i class="fa-regular fa-calendar"></i><span>Daily</span></button>
     <button class="mobile-nav-item" onclick="mobileNav('orders', this)"><i class="fa-regular fa-file-lines"></i><span>Orders</span></button>
     <button class="mobile-nav-item" onclick="mobileNav('reports', this)"><i class="fa-regular fa-chart-bar"></i><span>Reports</span></button>
-    <button class="mobile-nav-item" onclick="mobileNav('leaderboard', this)"><i class="fa-regular fa-trophy"></i><span>Leaders</span></button>
+    <button class="mobile-nav-item" onclick="mobileNav('cycles', this)"><i class="fa-regular fa-rotate"></i><span>Cycles</span></button>
   </nav>
 
   <!-- Floating Action Button -->
@@ -2644,6 +2655,66 @@
     </div>
   </div>
 
+  <!-- End Cycle Modal -->
+  <div class="modal-overlay" id="endCycleModal">
+    <div class="modal-container" style="max-width: 520px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="text-xl font-semibold">🏁 End Current Cycle</h3>
+          <p class="text-sm mt-1" style="color:var(--neutral-500);">All data will be archived. A fresh cycle will begin.</p>
+        </div>
+        <button class="btn btn-icon btn-ghost" onclick="closeModal('endCycleModal')">
+          <i class="fa-regular fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="card mb-4" style="background:var(--accent-50);border:1px solid var(--accent-200);">
+          <div class="flex items-center gap-3">
+            <span style="font-size:2rem;">⚠️</span>
+            <div>
+              <div class="font-semibold" style="color:var(--accent-700);">This action will archive all current data</div>
+              <div class="text-sm mt-1" style="color:var(--neutral-600);">Orders, daily logs, and allocations will be saved to Cycle History. The new cycle will start completely fresh with the same regions and technicians.</div>
+            </div>
+          </div>
+        </div>
+        <div id="endCycleSummaryCard" class="card mb-4" style="background:var(--neutral-50);"></div>
+        <div class="mb-4">
+          <label class="block text-sm font-semibold mb-2">Name the <strong>new</strong> cycle</label>
+          <input type="text" class="input-field" id="newCycleName" placeholder="e.g. FEBRUARY CYCLE" style="text-transform:uppercase;font-weight:600;font-size:1rem;letter-spacing:0.03em;">
+          <p class="text-xs mt-1" style="color:var(--neutral-500);">Give the new cycle a clear name so it's easy to identify later.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('endCycleModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmEndCycle()" style="background:linear-gradient(135deg,var(--accent-800),var(--accent-600));">
+          <i class="fa-regular fa-flag-checkered"></i> End Cycle & Start New
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Past Cycle Modal -->
+  <div class="modal-overlay" id="viewCycleModal">
+    <div class="modal-container" style="max-width:800px;max-height:90vh;overflow-y:auto;">
+      <div class="modal-header">
+        <div>
+          <h3 class="text-xl font-semibold" id="viewCycleTitle">Cycle Details</h3>
+          <p class="text-sm mt-1" style="color:var(--neutral-500);" id="viewCycleSubtitle"></p>
+        </div>
+        <button class="btn btn-icon btn-ghost" onclick="closeModal('viewCycleModal')">
+          <i class="fa-regular fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="viewCycleContent"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('viewCycleModal')">Close</button>
+        <button class="btn btn-primary" onclick="exportCycleData(window._viewingCycleIdx)">
+          <i class="fa-regular fa-download"></i> Export to Excel
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -2662,11 +2733,11 @@
       <div class="modal-body">
         <div class="shortcut-grid">
           <div class="shortcut-item">
-            <span class="kbd">⌘K</span>
+            <span class="kbd">K</span>
             <span>Search</span>
           </div>
           <div class="shortcut-item">
-            <span class="kbd">⌘S</span>
+            <span class="kbd">S</span>
             <span>Save (Daily page)</span>
           </div>
           <div class="shortcut-item">
@@ -2674,23 +2745,23 @@
             <span>Close modal / clear search</span>
           </div>
           <div class="shortcut-item">
-            <span class="kbd">⌘B</span>
+            <span class="kbd">B</span>
             <span>Toggle sidebar</span>
           </div>
           <div class="shortcut-item">
-            <span class="kbd">⌘D</span>
+            <span class="kbd">D</span>
             <span>Go to Dashboard</span>
           </div>
           <div class="shortcut-item">
-            <span class="kbd">⌘O</span>
+            <span class="kbd">O</span>
             <span>Go to Orders</span>
           </div>
           <div class="shortcut-item">
-            <span class="kbd">⌘L</span>
+            <span class="kbd">L</span>
             <span>Go to Leaderboard</span>
           </div>
           <div class="shortcut-item">
-            <span class="kbd">⌘/</span>
+            <span class="kbd">/</span>
             <span>Show this menu</span>
           </div>
         </div>
@@ -3049,11 +3120,19 @@
     const KEY = 'ccs_fuel_orders_v6';
     const DEFAULT = {
       currentRegion: 'New CCS',
+      currentCycleName: 'INITIAL CYCLE',
+      currentCycleStartDate: new Date().toISOString().slice(0,10),
+      cycles: [],
       regions: { 'New CCS': { technicians: [], technicianPlates: {}, orders: {}, dailyLog: {}, monthlyTarget: null, techMonthlyTargets: {}, unassignedComments: {} } }
     };
 
     let DB = JSON.parse(localStorage.getItem(KEY)) || structuredClone(DEFAULT);
     let currentEditingOrder = null;
+
+    // Ensure DB has cycle fields (migration for existing data)
+    if (!DB.cycles) DB.cycles = [];
+    if (!DB.currentCycleName) DB.currentCycleName = 'INITIAL CYCLE';
+    if (!DB.currentCycleStartDate) DB.currentCycleStartDate = new Date().toISOString().slice(0,10);
 
     // Ensure each region has required objects
     Object.values(DB.regions).forEach(r => {
@@ -3492,6 +3571,7 @@
           case 'regions':    renderRegionsPage(container); break;
           case 'reports':    renderReportsPage(container); break;
           case 'leaderboard':renderLeaderboardPage(container); break;
+          case 'cycles':     renderCyclesPage(container); break;
         }
         
         container.classList.add('page-entering');
@@ -5861,7 +5941,7 @@
       container.innerHTML = `
         <div class="stats-grid">
           <div class="stat-tile">
-            <div class="stat-label">Top Performer (Allocated)</div>
+            <div class="stat-label">Top Technician</div>
             <div class="stat-value text-2xl" id="topPerformer">—</div>
           </div>
           <div class="stat-tile">
@@ -5876,7 +5956,7 @@
 
         <div class="card">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Technician Leaderboard (Allocated Only)</h3>
+            <h3 class="text-lg font-semibold">Technician Leaderboard</h3>
             <div class="flex gap-2">
               <button class="btn btn-secondary btn-sm" onclick="openTechTargetModal()">
                 <i class="fa-regular fa-bullseye"></i> Set Targets
@@ -5973,13 +6053,13 @@
         
         html += `
           <div class="leaderboard-card" onclick="openTechHistory('${tech}')">
-            <div class="rank-badge ${rankClass}">#${idx + 1}</div>
+            <div class="rank-badge ${rankClass}">${idx + 1}</div>
             <div class="tech-details" style="flex: 1;">
               <div class="tech-name flex items-center gap-2">
                 ${techAvatarHtml(tech, 'style="width:28px;height:28px;font-size:0.75rem;"')}
                 ${tech}
               </div>
-              <div class="tech-plate">📍 ${data.region}</div>
+              <div class="tech-plate"> ${data.region}</div>
               <div class="lb-bar-container mt-2">
                 <div class="lb-bar-fill" style="width: ${percentage}%;"></div>
               </div>
@@ -6024,7 +6104,7 @@
             <div class="tech-details">
               <div class="tech-name">${new Date(e.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
               <div class="tech-plate">
-                ${e.unallocated ? 'Unallocated' : 'Order: ' + e.orderNo} · 📍 ${e.region}
+                ${e.unallocated ? 'Unallocated' : 'Order: ' + e.orderNo} ·  ${e.region}
                 ${e.comment ? ' · 💬 ' + e.comment : ''}
               </div>
             </div>
@@ -6751,7 +6831,7 @@
             <div class="text-sm text-neutral-500 mt-1">
               <i class="fa-regular fa-truck mr-1"></i>${order.vehiclePlate}
               &nbsp;·&nbsp; <i class="fa-regular fa-calendar mr-1"></i>${order.createdDate || '—'}
-              &nbsp;·&nbsp; 📍 ${rName}
+              &nbsp;·&nbsp;  ${rName}
             </div>
           </div>
           <span class="badge ${statusBadge} text-sm px-3 py-1.5">${statusText}</span>
@@ -7049,6 +7129,10 @@
             <div class="text-xs opacity-70 mb-1 tracking-widest uppercase">Welcome back</div>
             <h1 class="text-2xl font-bold mb-1">${DB.currentRegion} Overview</h1>
             <div class="opacity-75 text-sm">${now.toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</div>
+            <div class="mt-2 flex items-center gap-2">
+              <span style="background:rgba(255,255,255,0.2);padding:3px 12px;border-radius:999px;font-size:0.78rem;font-weight:600;letter-spacing:0.05em;">🔄 ${DB.currentCycleName}</span>
+              <span style="opacity:0.65;font-size:0.75rem;">Started ${new Date(DB.currentCycleStartDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>
+            </div>
             <div class="mt-4 flex gap-5 flex-wrap">
               <div><div class="opacity-70 text-xs">Open Orders (Assigned)</div><div class="text-2xl font-bold" id="dash-openCount">0</div></div>
               <div><div class="opacity-70 text-xs">Balance (Assigned)</div><div class="text-2xl font-bold" id="dash-balance">0L</div></div>
@@ -7221,6 +7305,381 @@
       }
 
       renderNotifications();
+    }
+
+    // ===== CYCLE MANAGEMENT =====
+    function openEndCycleModal() {
+      const region = DB.regions[DB.currentRegion];
+      const allOrders = Object.values(region.orders);
+      const totalOrders = allOrders.length;
+      const openOrders = allOrders.filter(o => (o.totalLiters - o.suppliedTotal) > 0).length;
+      const totalSupplied = allOrders.reduce((s,o) => s + o.suppliedTotal, 0);
+      const totalLiters = allOrders.reduce((s,o) => s + o.totalLiters, 0);
+      const allRegionCount = Object.keys(DB.regions).length;
+      const cycleDays = Math.round((Date.now() - new Date(DB.currentCycleStartDate).getTime()) / 86400000);
+
+      const techTotals = {};
+      Object.values(DB.regions).forEach(r => {
+        Object.values(r.dailyLog).forEach(entries => {
+          entries.forEach(e => {
+            if (!e.unallocated) techTotals[e.technician] = (techTotals[e.technician]||0) + e.supplied;
+          });
+        });
+      });
+      const topTech = Object.entries(techTotals).sort((a,b)=>b[1]-a[1])[0];
+
+      document.getElementById('endCycleSummaryCard').innerHTML = `
+        <div class="text-sm font-semibold mb-3" style="color:var(--neutral-700);">
+          <i class="fa-regular fa-clock-rotate-left"></i> Current Cycle: <span style="color:var(--accent-600);">${DB.currentCycleName}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div style="background:white;border-radius:var(--radius-md);padding:10px;border:1px solid var(--neutral-200);">
+            <div class="text-xs text-neutral-500">Started</div>
+            <div class="font-semibold">${new Date(DB.currentCycleStartDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
+            <div class="text-xs text-neutral-400">${cycleDays} days ago</div>
+          </div>
+          <div style="background:white;border-radius:var(--radius-md);padding:10px;border:1px solid var(--neutral-200);">
+            <div class="text-xs text-neutral-500">Regions</div>
+            <div class="font-semibold">${allRegionCount}</div>
+          </div>
+          <div style="background:white;border-radius:var(--radius-md);padding:10px;border:1px solid var(--neutral-200);">
+            <div class="text-xs text-neutral-500">Total Orders</div>
+            <div class="font-semibold">${totalOrders} <span class="text-xs text-warning-600">(${openOrders} still open)</span></div>
+          </div>
+          <div style="background:white;border-radius:var(--radius-md);padding:10px;border:1px solid var(--neutral-200);">
+            <div class="text-xs text-neutral-500">Total Supplied</div>
+            <div class="font-semibold font-mono">${totalSupplied.toLocaleString()}L / ${totalLiters.toLocaleString()}L</div>
+          </div>
+          ${topTech ? `<div style="background:white;border-radius:var(--radius-md);padding:10px;border:1px solid var(--neutral-200);grid-column:span 2;">
+            <div class="text-xs text-neutral-500">Top Technician</div>
+            <div class="font-semibold">🏆 ${topTech[0]} · ${topTech[1].toLocaleString()}L</div>
+          </div>` : ''}
+        </div>
+      `;
+
+      // Suggest a name for the new cycle
+      const months = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+      const now = new Date();
+      const suggested = `${months[now.getMonth()]} CYCLE`;
+      document.getElementById('newCycleName').value = suggested;
+
+      openModal('endCycleModal');
+    }
+
+    function confirmEndCycle() {
+      const newName = document.getElementById('newCycleName').value.trim().toUpperCase();
+      if (!newName) return showToast('Please enter a name for the new cycle', 'warning');
+
+      // Archive current cycle snapshot
+      const snapshot = {
+        name: DB.currentCycleName,
+        startDate: DB.currentCycleStartDate,
+        endDate: new Date().toISOString().slice(0,10),
+        endedAt: new Date().toISOString(),
+        regions: JSON.parse(JSON.stringify(DB.regions)) // deep clone
+      };
+      DB.cycles.push(snapshot);
+
+      // Reset all region data (keep technicians, plates, targets)
+      Object.keys(DB.regions).forEach(rName => {
+        const r = DB.regions[rName];
+        r.orders = {};
+        r.dailyLog = {};
+        r.monthlyTarget = null;
+        r.unassignedComments = {};
+        // Keep: technicians, technicianPlates, techMonthlyTargets
+      });
+
+      // Start new cycle
+      DB.currentCycleName = newName;
+      DB.currentCycleStartDate = new Date().toISOString().slice(0,10);
+
+      save();
+      closeModal('endCycleModal');
+      showToast(`🏁 Cycle ended! Starting: ${newName}`, 'success', 5000);
+      renderPageWithTransition('dashboard');
+    }
+
+    // ===== CYCLES PAGE =====
+    function renderCyclesPage(container) {
+      const cycles = DB.cycles || [];
+      
+      // Compute summary for the current live cycle too
+      let currentSummary = { orders: 0, supplied: 0, techs: new Set() };
+      Object.values(DB.regions).forEach(r => {
+        currentSummary.orders += Object.keys(r.orders).length;
+        Object.values(r.dailyLog).forEach(entries => entries.forEach(e => {
+          if (!e.unallocated) { currentSummary.supplied += e.supplied; currentSummary.techs.add(e.technician); }
+        }));
+      });
+
+      container.innerHTML = `
+        <div class="card mb-4" style="background:linear-gradient(135deg,var(--primary-800),var(--primary-700));color:white;">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <div class="text-xs opacity-70 mb-1 tracking-widest uppercase">Active Cycle</div>
+              <h2 class="text-2xl font-bold">${DB.currentCycleName}</h2>
+              <div class="opacity-75 text-sm mt-1">Started: ${new Date(DB.currentCycleStartDate).toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</div>
+            </div>
+            <button class="btn" onclick="openEndCycleModal()" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);">
+              <i class="fa-regular fa-flag-checkered"></i> End This Cycle
+            </button>
+          </div>
+          <div class="flex gap-6 mt-4 flex-wrap">
+            <div><div class="text-xs opacity-70">Orders</div><div class="text-xl font-bold">${currentSummary.orders}</div></div>
+            <div><div class="text-xs opacity-70">Total Supplied</div><div class="text-xl font-bold">${currentSummary.supplied.toLocaleString()}L</div></div>
+            <div><div class="text-xs opacity-70">Active Technicians</div><div class="text-xl font-bold">${currentSummary.techs.size}</div></div>
+            <div><div class="text-xs opacity-70">Regions</div><div class="text-xl font-bold">${Object.keys(DB.regions).length}</div></div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-semibold">📚 Past Cycles (${cycles.length})</h3>
+        </div>
+
+        ${cycles.length === 0 ? `
+          <div class="card text-center py-10">
+            <div style="font-size:3rem;margin-bottom:1rem;">🔄</div>
+            <h3 class="text-lg font-semibold mb-2">No Past Cycles Yet</h3>
+            <p class="text-sm text-neutral-500">When you end a cycle, it will appear here with all its data preserved for review.</p>
+          </div>
+        ` : cycles.slice().reverse().map((cycle, revIdx) => {
+          const idx = cycles.length - 1 - revIdx;
+          const allOrders = Object.values(cycle.regions).flatMap(r => Object.values(r.orders));
+          const totalOrders = allOrders.length;
+          const totalSupplied = allOrders.reduce((s,o) => s + o.suppliedTotal, 0);
+          const totalLiters = allOrders.reduce((s,o) => s + o.totalLiters, 0);
+          const techTotals = {};
+          Object.values(cycle.regions).forEach(r => {
+            Object.values(r.dailyLog).forEach(entries => entries.forEach(e => {
+              if (!e.unallocated) techTotals[e.technician] = (techTotals[e.technician]||0) + e.supplied;
+            }));
+          });
+          const topTech = Object.entries(techTotals).sort((a,b)=>b[1]-a[1])[0];
+          const cycleDays = Math.round((new Date(cycle.endDate) - new Date(cycle.startDate)) / 86400000) + 1;
+          const completionPct = totalLiters > 0 ? Math.min(100, (totalSupplied / totalLiters * 100)) : 0;
+
+          return `
+            <div class="card mb-3" style="border-left:4px solid var(--accent-600);">
+              <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span style="background:var(--accent-100);color:var(--accent-700);font-weight:700;padding:2px 10px;border-radius:999px;font-size:0.8rem;">#${idx+1}</span>
+                    <h4 class="text-lg font-bold">${cycle.name}</h4>
+                  </div>
+                  <div class="text-sm mt-1" style="color:var(--neutral-500);">
+                    ${new Date(cycle.startDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})} → ${new Date(cycle.endDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
+                    <span class="ml-2 badge badge-neutral">${cycleDays} days</span>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button class="btn btn-secondary btn-sm" onclick="viewCycleDetails(${idx})">
+                    <i class="fa-regular fa-eye"></i> Full Details
+                  </button>
+                  <button class="btn btn-secondary btn-sm" onclick="exportCycleData(${idx})">
+                    <i class="fa-regular fa-download"></i> Excel
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-4 gap-3 mb-3">
+                <div class="text-center" style="background:var(--neutral-50);border-radius:var(--radius-md);padding:10px;">
+                  <div class="text-xs text-neutral-500">Orders</div>
+                  <div class="font-bold text-lg font-mono">${totalOrders}</div>
+                </div>
+                <div class="text-center" style="background:var(--neutral-50);border-radius:var(--radius-md);padding:10px;">
+                  <div class="text-xs text-neutral-500">Supplied</div>
+                  <div class="font-bold text-lg font-mono">${totalSupplied.toLocaleString()}L</div>
+                </div>
+                <div class="text-center" style="background:var(--neutral-50);border-radius:var(--radius-md);padding:10px;">
+                  <div class="text-xs text-neutral-500">Total Ordered</div>
+                  <div class="font-bold text-lg font-mono">${totalLiters.toLocaleString()}L</div>
+                </div>
+                <div class="text-center" style="background:var(--neutral-50);border-radius:var(--radius-md);padding:10px;">
+                  <div class="text-xs text-neutral-500">Regions</div>
+                  <div class="font-bold text-lg font-mono">${Object.keys(cycle.regions).length}</div>
+                </div>
+              </div>
+
+              <div class="mb-2">
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-neutral-500">Completion</span>
+                  <span class="font-semibold">${completionPct.toFixed(1)}%</span>
+                </div>
+                <div class="progress-bar" style="height:8px;">
+                  <div class="progress-fill success" style="width:${completionPct}%;"></div>
+                </div>
+              </div>
+
+              ${topTech ? `<div class="text-xs mt-2" style="color:var(--neutral-500);">🏆 Top Technician: <strong>${topTech[0]}</strong> · ${topTech[1].toLocaleString()}L supplied</div>` : ''}
+            </div>
+          `;
+        }).join('')}
+      `;
+    }
+
+    function viewCycleDetails(cycleIdx) {
+      window._viewingCycleIdx = cycleIdx;
+      const cycle = DB.cycles[cycleIdx];
+      if (!cycle) return;
+
+      document.getElementById('viewCycleTitle').textContent = `📋 ${cycle.name}`;
+      document.getElementById('viewCycleSubtitle').textContent = `${new Date(cycle.startDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})} → ${new Date(cycle.endDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}`;
+
+      let html = '';
+
+      Object.entries(cycle.regions).forEach(([rName, r]) => {
+        const allOrders = Object.values(r.orders);
+        if (allOrders.length === 0 && Object.keys(r.dailyLog).length === 0) return;
+
+        const totalSupplied = allOrders.reduce((s,o) => s + o.suppliedTotal, 0);
+        const totalOrdered = allOrders.reduce((s,o) => s + o.totalLiters, 0);
+
+        const techTotals = {};
+        Object.values(r.dailyLog).forEach(entries => entries.forEach(e => {
+          if (!e.unallocated) techTotals[e.technician] = (techTotals[e.technician]||0) + e.supplied;
+        }));
+        const sortedTechs = Object.entries(techTotals).sort((a,b) => b[1]-a[1]);
+
+        html += `
+          <div class="mb-6">
+            <div class="flex items-center gap-2 mb-3">
+              <div style="background:var(--primary-800);color:white;padding:4px 12px;border-radius:999px;font-weight:700;font-size:0.85rem;">${rName}</div>
+              <span class="text-sm text-neutral-500">${allOrders.length} orders · ${totalSupplied.toLocaleString()}L / ${totalOrdered.toLocaleString()}L</span>
+            </div>
+
+            ${allOrders.length > 0 ? `
+            <div class="table-container mb-3">
+              <table class="table">
+                <thead><tr>
+                  <th>Order No</th><th>Vehicle</th><th>Total</th><th>Supplied</th><th>Balance</th><th>Status</th><th>Technicians</th>
+                </tr></thead>
+                <tbody>
+                  ${allOrders.map(o => {
+                    const bal = o.totalLiters - o.suppliedTotal;
+                    const techs = Object.keys(o.allocations||{}).join(', ') || '—';
+                    return `<tr>
+                      <td class="font-mono font-semibold">${o.orderNo}</td>
+                      <td>${o.vehiclePlate||'—'}</td>
+                      <td class="font-mono">${o.totalLiters}L</td>
+                      <td class="font-mono">${o.suppliedTotal}L</td>
+                      <td class="font-mono ${bal>0?'text-warning-700':'text-success-700'}">${bal}L</td>
+                      <td><span class="badge ${o.status==='OPEN'?'badge-warning':'badge-success'}">${o.status||'OPEN'}</span></td>
+                      <td class="text-xs">${techs}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>` : ''}
+
+            ${sortedTechs.length > 0 ? `
+            <div class="card" style="background:var(--neutral-50);">
+              <div class="font-semibold text-sm mb-3">Technician Performance</div>
+              ${sortedTechs.map(([tech, litres], i) => {
+                const pct = (litres / sortedTechs[0][1]) * 100;
+                return `<div class="flex items-center gap-3 mb-2">
+                  <span class="text-xs font-mono w-5 text-neutral-400">#${i+1}</span>
+                  ${techAvatarHtml(tech, 'style="width:28px;height:28px;font-size:0.75rem;"')}
+                  <div style="flex:1;">
+                    <div class="flex justify-between mb-1">
+                      <span class="text-sm font-semibold">${tech}</span>
+                      <span class="font-mono text-sm font-bold">${litres.toLocaleString()}L</span>
+                    </div>
+                    <div class="progress-bar" style="height:6px;"><div class="progress-fill success" style="width:${pct}%;"></div></div>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>` : ''}
+          </div>
+        `;
+      });
+
+      // Daily log summary
+      let allLogEntries = [];
+      Object.entries(cycle.regions).forEach(([rName, r]) => {
+        Object.entries(r.dailyLog).forEach(([date, entries]) => {
+          entries.forEach(e => allLogEntries.push({...e, date, region: rName}));
+        });
+      });
+      allLogEntries.sort((a,b) => b.date.localeCompare(a.date));
+
+      if (allLogEntries.length > 0) {
+        html += `
+          <div class="mb-4">
+            <h4 class="font-semibold mb-3">📅 Daily Log (${allLogEntries.length} entries)</h4>
+            <div class="table-container" style="max-height:320px;overflow-y:auto;">
+              <table class="table">
+                <thead><tr><th>Date</th><th>Region</th><th>Technician</th><th>Order</th><th>Supplied</th><th>Type</th></tr></thead>
+                <tbody>
+                  ${allLogEntries.map(e => `<tr>
+                    <td>${new Date(e.date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</td>
+                    <td class="text-xs">${e.region}</td>
+                    <td>${e.technician}</td>
+                    <td class="font-mono text-xs">${e.orderNo||'—'}</td>
+                    <td class="font-mono font-semibold">${e.supplied}L</td>
+                    <td><span class="badge ${e.unallocated?'badge-warning':'badge-success'}">${e.unallocated?'Unalloc':'Allocated'}</span></td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+
+      document.getElementById('viewCycleContent').innerHTML = html || '<p class="text-neutral-400 text-center py-6">No data recorded for this cycle.</p>';
+      openModal('viewCycleModal');
+    }
+
+    function exportCycleData(cycleIdx) {
+      const cycle = DB.cycles[cycleIdx];
+      if (!cycle) return showToast('Cycle not found', 'error');
+
+      const wb = XLSX.utils.book_new();
+
+      // Summary sheet
+      const summaryData = [['Cycle Name', cycle.name], ['Start Date', cycle.startDate], ['End Date', cycle.endDate], ['Regions', Object.keys(cycle.regions).join(', ')]];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), 'Cycle Summary');
+
+      // Orders sheet
+      const ordersData = [['Region','Order No','Vehicle','Total Litres','Supplied','Balance','Status','Date','Technicians']];
+      Object.entries(cycle.regions).forEach(([rName, r]) => {
+        Object.values(r.orders).forEach(o => {
+          const techs = Object.keys(o.allocations||{}).join(', ');
+          ordersData.push([rName, o.orderNo, o.vehiclePlate||'', o.totalLiters, o.suppliedTotal, o.totalLiters-o.suppliedTotal, o.status||'OPEN', o.createdDate||'', techs]);
+        });
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ordersData), 'Orders');
+
+      // Daily Log sheet
+      const logData = [['Region','Date','Technician','Order No','Supplied','Type','Comment']];
+      Object.entries(cycle.regions).forEach(([rName, r]) => {
+        Object.entries(r.dailyLog).forEach(([date, entries]) => {
+          entries.forEach(e => {
+            logData.push([rName, date, e.technician, e.orderNo||'Unallocated', e.supplied, e.unallocated?'Unallocated':'Allocated', e.comment||'']);
+          });
+        });
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(logData), 'Daily Log');
+
+      // Technician summary sheet
+      const techMap = {};
+      Object.entries(cycle.regions).forEach(([rName, r]) => {
+        Object.values(r.dailyLog).forEach(entries => entries.forEach(e => {
+          if (!e.unallocated) {
+            const key = `${e.technician}|${rName}`;
+            techMap[key] = (techMap[key]||0) + e.supplied;
+          }
+        }));
+      });
+      const techData = [['Technician','Region','Total Supplied (L)']];
+      Object.entries(techMap).sort((a,b)=>b[1]-a[1]).forEach(([key, litres]) => {
+        const [tech, region] = key.split('|');
+        techData.push([tech, region, litres]);
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(techData), 'Technician Summary');
+
+      XLSX.writeFile(wb, `CCS_${cycle.name.replace(/\s+/g,'_')}_${cycle.startDate}_to_${cycle.endDate}.xlsx`);
+      showToast(`Exported: ${cycle.name}`, 'success');
     }
 
     // ===== INITIALIZATION =====
