@@ -135,15 +135,15 @@ class MultiSourceConfig:
             sheet_name="fuel capture",
             site_prefix="IHS_NRW",
             variation_mapping={
-                "CURRENT DG RUN HOURS": ["RT", "Run Time", "GD Run Time", "DG RT"],
-                "PREVIOUS DG RUN HOURS": ["Previous RT", "Previous Run Time"],
-                "FUEL FOUND": ["Found", "Fuel found", "Initial fuel level"],
-                "FUEL ADDED": ["Added", "Fuel added"],
-                "SITE ID": ["NRW", "Site ID", "Site id"],
+                "CURRENT DG RUN HOURS": ["RT", "Run Time", "GD Run Time", "DG Run Time", "DG RT", "Runtime", "RunTime", "Rt", "Run"],
+                "PREVIOUS DG RUN HOURS": ["Previous RT", "Previous Run Time", "Previous GD RT", "Previous GD Run time"],
+                "FUEL FOUND": ["Found", "Fuel found", "Initial fuel level", "Initial dp", "Intial dp", "Initial"],
+                "FUEL ADDED": ["Added fuel", "Fuel added", "Added", "Uplifted"],
+                "SITE ID": ["NRW", "Site ID", "Site id", "Site I'd", "Site I'd:", "Code"],
                 "SITE NAME": ["Site name", "Site Name"],
-                "SUPPLIER": ["Fuel source", "Source"],
+                "SUPPLIER": ["Fuel source", "Source", "source", "Puma fuel", "Puma(ccs", "Meru fuel", "meru fuel"],
                 "DATE": ["Date"],
-                "CPH": ["CPH"],
+                "CPH": ["CPH", "Cph", "CPh"],
                 "NAME OF TECHNICIAN": ["Technician"]
             },
             numeric_fields=["FUEL ADDED", "FUEL FOUND", "CPH"]
@@ -191,38 +191,55 @@ class UniversalNormalizer:
         self._setup_patterns()
 
     def _setup_patterns(self):
-        prefix = self.config.site_prefix.split('_')[-1]
+        primary = self.config.site_prefix.split('_')[-1]
+        all_prefixes = [primary] + list(getattr(self.config, 'extra_prefixes', []))
+        self._prefix_map: Dict[str, str] = {primary: self.config.site_prefix}
+        for ep in getattr(self.config, 'extra_prefixes', []):
+            self._prefix_map[ep.upper()] = ep.upper()
+        combined = "|".join(re.escape(p) for p in all_prefixes)
         self.site_pattern = re.compile(
-            rf"(?:{prefix}|{prefix.lower()}|{prefix.title()})[\s_:,-]*([0-9]{{1,4}}[A-Z]?)",
+            rf"(?:IHS[_\s]*)?({combined})[\s_:,-]*([0-9]{{1,4}}[A-Za-z]{{0,2}})",
             re.IGNORECASE
         )
-        self.date_pattern = re.compile(r"(?:Date\s*[:\-=]?\s*)?(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})", re.IGNORECASE)
+        self.date_pattern = re.compile(r"(?:Date\s*[:\-=*.]?\s*)?(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})", re.IGNORECASE)
+        self.date_pattern_spaced = re.compile(r"(\d{1,2})\s*[-_]\s*(\d{1,2})\s*[-_]\s*(\d{2,4})")
+        self.wa_header_strip = re.compile(r'\d{1,2}/\d{1,2}/\d{4},\s*\d{1,2}:\d{2}\s*-[^:]+:', re.MULTILINE)
 
     def normalize_site_id(self, text: str) -> str:
         if not text:
             return ""
         m = self.site_pattern.search(text)
-        if not m:
-            return ""
-        num = m.group(1).upper().replace("_", "")
-        return f"{self.config.site_prefix}_{num}"
+        if m:
+            matched_raw = m.group(1).upper()
+            num         = m.group(2).upper().replace("_", "")
+            full_prefix = self._prefix_map.get(matched_raw, self.config.site_prefix)
+            return f"{full_prefix}_{num}"
+        m2 = re.search(r'🆔\s*(\d{1,4}[A-Za-z]{0,2})', text)
+        if m2:
+            return f"{self.config.site_prefix}_{m2.group(1).upper()}"
+        m3 = re.search(r'\bCode\s*[:\-]?\s*(\d{1,4}[A-Za-z]{0,2})', text, re.IGNORECASE)
+        if m3:
+            return f"{self.config.site_prefix}_{m3.group(1).upper()}"
+        return ""
 
     def normalize_date(self, text: str) -> Optional[datetime]:
         if not text:
             return None
-        m = self.date_pattern.search(text)
-        if not m:
-            return None
-        s = m.group(1).strip().replace('-', '/')
-        for fmt in ("%d/%m/%Y", "%d/%m/%y", "%d/%m/%Y"):
-            try:
-                return datetime.strptime(s, fmt)
-            except Exception:
-                continue
-        try:
-            return datetime.strptime(s, "%d-%b-%Y")
-        except Exception:
-            pass
+        clean = self.wa_header_strip.sub('', text)
+        m = self.date_pattern.search(clean)
+        if m:
+            s = m.group(1).strip().replace('-', '/').replace('_', '/')
+            for fmt in ("%d/%m/%Y", "%d/%m/%y"):
+                try: return datetime.strptime(s, fmt)
+                except Exception: pass
+            try: return datetime.strptime(s, "%d-%b-%Y")
+            except Exception: pass
+        m2 = self.date_pattern_spaced.search(clean)
+        if m2:
+            s = f"{m2.group(1)}/{m2.group(2)}/{m2.group(3)}"
+            for fmt in ("%d/%m/%Y", "%d/%m/%y"):
+                try: return datetime.strptime(s, fmt)
+                except Exception: pass
         return None
 
     def normalize_supplier(self, text: str) -> str:
@@ -273,11 +290,11 @@ class UniversalParser:
         skipped = 0
         total = len(blocks) if blocks else 1
 
-        for idx, block in enumerate(blocks):
+        for idx, (block, wa_date) in enumerate(blocks):
             if progress_callback:
                 progress_callback(int((idx / total) * 40) + 10)
 
-            res = self._parse_block(block, idx)
+            res = self._parse_block(block, idx, wa_date)
             if res is None or ('error' in res):
                 skipped += 1
                 reason = res.get('error', 'Parse failed') if res else 'Empty block'
@@ -303,27 +320,99 @@ class UniversalParser:
         logging.info(f"📊 Parsed {len(entries)} valid entries, skipped {skipped}")
         return ParseResult(entries=entries, skipped_count=skipped, unmatched_blocks=unmatched)
 
-    def _split_blocks(self, content: str) -> List[str]:
-        blocks = re.split(r"(?=\bDate\s*[:\-=]?\s*\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})", content, flags=re.IGNORECASE)
-        if len(blocks) <= 1:
-            blocks = [b.strip() for b in content.split("\n\n") if b.strip()]
-        return [b.strip() for b in blocks if b.strip() and len(b.strip()) > 10]
+    # Pattern that matches the WhatsApp message header line:
+    #   "13/03/2026, 20:30 - Sender Name: ..."
+    _WA_HEADER = re.compile(
+        r'(\d{1,2}/\d{1,2}/\d{4}),\s*\d{1,2}:\d{2}\s*-',
+    )
+
+    def _split_blocks(self, content: str) -> List[tuple]:
+        """
+        Two-stage split:
+          1. Split on every WhatsApp message header so each WA message becomes
+             its own segment with its own authoritative timestamp.
+          2. Within each segment, split on site-ID lines so multiple reports
+             in one message still get separated.
+        """
+        primary = self.config.site_prefix.split('_')[-1]
+        extra   = list(getattr(self.config, 'extra_prefixes', []))
+        all_pfx = "|".join(re.escape(p) for p in [primary] + extra)
+
+        site_split_pat = re.compile(
+            rf'(?=(?:^|\n)\s*(?:[✅👉🏾👉✍️]\s*)*(?:(?:IHS[_\s]*)?(?:{all_pfx})[\s_:,-]*\d|🆔\s*\d))',
+            re.IGNORECASE | re.MULTILINE
+        )
+
+        segments = re.split(r'(?=\d{1,2}/\d{1,2}/\d{4},\s*\d{1,2}:\d{2}\s*-)', content)
+
+        result = []
+        for seg in segments:
+            seg = seg.strip()
+            if not seg:
+                continue
+            wa_date = None
+            m = self._WA_HEADER.search(seg)
+            if m:
+                try:
+                    wa_date = datetime.strptime(m.group(1), "%d/%m/%Y")
+                except Exception:
+                    pass
+
+            sub_blocks = site_split_pat.split(seg)
+            if not sub_blocks:
+                sub_blocks = [seg]
+
+            for sb in sub_blocks:
+                sb = sb.strip()
+                if not sb or len(sb) < 5:
+                    continue
+                has_site      = bool(re.search(rf'(?:IHS[_\s]*)?(?:{all_pfx})[\s_:,-]*\d', sb, re.IGNORECASE))
+                has_emoji_id  = bool(re.search(r'🆔\s*\d', sb))
+                has_code_id   = bool(re.search(r'\bCode\s*[:\-]?\s*\d', sb, re.IGNORECASE))
+                has_fuel      = bool(re.search(r'(fuel|found|added|runtime|RT\b|Run\s*Time|Uplifted)', sb, re.IGNORECASE))
+                has_structure = bool(re.search(r'(Site|Date|Found|Added|RT|Run|CPH|Initial|Fuel)\s*[:\-]', sb, re.IGNORECASE))
+                if not (has_site or has_emoji_id or has_code_id or (has_fuel and has_structure)):
+                    continue
+                result.append((sb, wa_date))
+        return result
 
     def _extract_site_name(self, block: str, site_id_guess: str) -> str:
+        # 1. "Site Name:" label
         m = re.search(r"Site\s*Name\s*[:\-]?\s*(.+)", block, re.IGNORECASE)
         if m:
-            name = m.group(1).strip()
-            name = re.split(r"[\r\n]", name)[0].strip()
+            name = m.group(1).splitlines()[0].strip()
             name = re.split(r"Site\s*I'd|Site\s*ID|Run Time", name, flags=re.IGNORECASE)[0].strip()
-            return name
-        m2 = re.search(r"Site\s*name\s*[:\-]?\s*(.+)", block, re.IGNORECASE)
+            if name: return name
+        # 2. "Site:" short label (e.g. "Site: kandemba school")
+        m2 = re.search(r"(?<!\w)Site\s*[:\-]\s*(.+)", block, re.IGNORECASE)
         if m2:
-            return m2.group(1).splitlines()[0].strip()
+            name = m2.group(1).splitlines()[0].strip()
+            if name and not re.match(r"(ID|I'd|name)", name, re.IGNORECASE):
+                return name
+        # 3. Site name embedded on same line as site ID (e.g. "Solwezi main nrw 001m")
         if site_id_guess:
-            idx = block.find(site_id_guess)
-            if idx > 0:
-                prefix = block[:idx].strip().splitlines()[-1].strip()
-                return prefix
+            for line in block.splitlines():
+                if site_id_guess.upper() in line.upper():
+                    name = re.sub(
+                        r'(?:IHS[_\s]*)?(NRW|EST|CBT)[_\s:,-]*[0-9]{1,4}[A-Za-z]{0,2}',
+                        '', line, flags=re.IGNORECASE
+                    ).strip(" :-,\t")
+                    # Strip WA header portion too
+                    name = re.sub(r'\d{1,2}/\d{1,2}/\d{4},\s*\d{1,2}:\d{2}\s*-[^:]+:', '', name).strip()
+                    if name and len(name) > 2: return name
+        # 4. First descriptive line (skip metadata lines)
+        skip_pat = re.compile(
+            r'^(\d{1,2}[/\-]|Found|Added|Total|RT\b|CPH|Meru|Puma|Date|Initial|Fuel|Run|Previous|DG|GD|Number|Vehicle|Final|Uplifted|Balance|<Media|This message|👉|✅|✍️|\*)',
+            re.IGNORECASE
+        )
+        for line in block.splitlines():
+            line = re.sub(r'\d{1,2}/\d{1,2}/\d{4},\s*\d{1,2}:\d{2}\s*-[^:]+:', '', line).strip()
+            if not line or len(line) < 3 or skip_pat.match(line): continue
+            name = re.sub(
+                r'(?:IHS[_\s]*)?(NRW|EST|CBT)[_\s:,-]*[0-9]{0,4}[A-Za-z]{0,2}',
+                '', line, flags=re.IGNORECASE
+            ).strip(" :-,\t")
+            if name and len(name) > 2: return name
         return ""
 
     def _make_fallback_key(self, data: Dict) -> str:
@@ -342,7 +431,10 @@ class UniversalParser:
                 return date
         return ""
 
-    def _parse_block(self, block: str, block_idx: int) -> Optional[Dict]:
+    # Max days gap between written date and WhatsApp post date before we use the fallback.
+    _MAX_DATE_DRIFT_DAYS = 7
+
+    def _parse_block(self, block: str, block_idx: int, wa_date: Optional[datetime] = None) -> Optional[Dict]:
         data: Dict[str, Any] = {}
         lines = [ln.strip() for ln in block.splitlines() if ln.strip()]
         if not lines:
@@ -351,7 +443,27 @@ class UniversalParser:
 
         dt = self.normalizer.normalize_date(block_text)
         if dt:
+            # Sanity-check the written date against the WhatsApp post timestamp.
+            # Technicians sometimes post with the wrong date (wrong day, or even wrong year).
+            # If the gap exceeds _MAX_DATE_DRIFT_DAYS AND a WhatsApp timestamp is available,
+            # fall back to the WhatsApp post date and log a warning so it is traceable.
+            if wa_date:
+                drift = abs((dt - wa_date).days)
+                if drift > self._MAX_DATE_DRIFT_DAYS:
+                    logging.warning(
+                        f"⚠️  Block {block_idx+1}: Written date {dt.strftime('%d/%m/%Y')} is "
+                        f"{drift} day(s) away from WhatsApp post date "
+                        f"{wa_date.strftime('%d/%m/%Y')} — using WhatsApp date as fallback."
+                    )
+                    dt = wa_date
             data["CURRENT VISIT DATE"] = dt.strftime("%d/%m/%Y")
+        elif wa_date:
+            # No written date found at all — use the WhatsApp timestamp directly.
+            logging.warning(
+                f"⚠️  Block {block_idx+1}: No written date found — "
+                f"using WhatsApp post date {wa_date.strftime('%d/%m/%Y')} as fallback."
+            )
+            data["CURRENT VISIT DATE"] = wa_date.strftime("%d/%m/%Y")
 
         site_id = self.normalizer.normalize_site_id(block_text)
         if site_id:
@@ -363,6 +475,15 @@ class UniversalParser:
             if site_name:
                 data["SITE NAME"] = site_name
 
+        # If still no site identifier, use a traceable fallback so the row
+        # appears in Excel and can be manually corrected
+        if "SITE ID" not in data and not data.get("SITE NAME"):
+            fallback = f"UNKNOWN_{block_idx+1}"
+            if wa_date:
+                fallback = f"UNKNOWN_{wa_date.strftime('%d%m%Y')}_{block_idx+1}"
+            data["SITE NAME"] = fallback
+            logging.warning(f"⚠️  Block {block_idx+1}: no site ID or name found — using '{fallback}'")
+
         for line in lines:
             lower_line = line.lower()
             for col, variants in self.config.variation_mapping.items():
@@ -371,7 +492,20 @@ class UniversalParser:
                 for var in variants:
                     if var.lower() in lower_line:
                         parts = re.split(r"[:\-=]", line, 1)
-                        value = parts[1].strip() if len(parts) > 1 else parts[0].strip()
+                        if len(parts) > 1:
+                            # Standard "Label: value" or "Label - value" format
+                            value = parts[1].strip()
+                        else:
+                            # No separator — strip the matched keyword from the
+                            # start of the line to get the value portion.
+                            # Handles Kenny-style: "RT 5093", "Found 10", "Added 100"
+                            value = re.sub(
+                                rf'^\s*{re.escape(var)}\s*',
+                                '', line.strip(), flags=re.IGNORECASE
+                            ).strip()
+                            # If stripping the keyword left nothing, skip
+                            if not value:
+                                continue
                         data[col] = value
                         break
                 if col in data:
@@ -462,7 +596,7 @@ class UniversalExcelManager:
         logging.info(f"Backup created: {dest.name}")
 
     def load_workbook(self):
-        return load_workbook(self.config.excel_file)
+        return load_workbook(self.config.excel_file, keep_links=True)
 
     def _normalize_header(self, s: Any) -> str:
         return str(s or "").strip().upper()
@@ -566,6 +700,35 @@ class UniversalDataUpdater:
                 return date
         return ""
 
+    def _build_formula_template(self, ws: Worksheet, header_row: int) -> Dict[int, str]:
+        """
+        Scan ALL existing data rows to collect formula templates keyed by column index.
+        Returns {col_index: formula_template_string} where row numbers inside the formula
+        are replaced with '{ROW}' so the correct target row can be substituted later.
+        Only the first formula found per column is stored as the template.
+        """
+        formula_template: Dict[int, str] = {}
+        for rw in range(header_row + 1, ws.max_row + 1):
+            for cell in ws[rw]:
+                col = cell.column
+                if col in formula_template:
+                    continue  # already have a template for this column
+                if cell.value and isinstance(cell.value, str) and cell.value.startswith("="):
+                    # Replace row-number occurrences with '{ROW}' ONLY when the digit string
+                    # matches the current source row — so fixed VLOOKUP constants (e.g. the
+                    # "2" in VLOOKUP(...,2,0)) are left untouched.
+                    template = re.sub(
+                        r'(?<=[A-Za-z$])(\d+)',
+                        lambda m, r=rw: '{ROW}' if m.group(1) == str(r) else m.group(1),
+                        cell.value
+                    )
+                    formula_template[col] = template
+        logging.info(
+            f"📐 Formula template: {len(formula_template)} formula column(s) detected — "
+            f"cols {sorted(formula_template.keys())}"
+        )
+        return formula_template
+
     def update_excel(self, entries: List[Dict], error_logger: Optional[Callable] = None,
                      progress_callback: Optional[Callable] = None) -> UpdateResult:
         if not entries:
@@ -587,6 +750,10 @@ class UniversalDataUpdater:
         sheet_info = self.excel_manager.ensure_column_exists(sheet_info, "NAME OF TECHNICIAN")
         sheet_info = self.excel_manager.ensure_column_exists(sheet_info, "FUEL LEFT ON SITE")
         sheet_info = self.excel_manager.ensure_column_exists(sheet_info, "I.H.S SITE ID")
+
+        # Build formula templates BEFORE we start appending rows
+        formula_template = self._build_formula_template(ws, sheet_info.header_row)
+        logging.info(f"📐 Formula template: {len(formula_template)} formula columns detected and will be preserved")
 
         added = 0
         faulty = 0
@@ -693,20 +860,29 @@ class UniversalDataUpdater:
                     val = val.strftime("%d/%m/%Y")
                 row_vals.append(val)
 
-            # Write row (WITH AUTO DATE FIX)
+            # Write row — formula columns ALWAYS get their formula regardless of parsed data.
+            # Automation data values are only written to non-formula columns.
             for col_idx, cell_val in enumerate(row_vals, start=1):
-                cell = sheet_info.worksheet.cell(row=append_row, column=col_idx, value=cell_val)
+                cell = sheet_info.worksheet.cell(row=append_row, column=col_idx)
 
-                # AUTO DATE FIX
-                header_name = sheet_info.headers[col_idx - 1].strip().upper()
-                if "DATE" in header_name:
-                    try:
-                        if isinstance(cell_val, str):
-                            dt = datetime.strptime(cell_val.strip(), "%d/%m/%Y")
-                            cell.value = dt
-                            cell.number_format = "DD/MM/YYYY"
-                    except Exception:
-                        pass
+                if col_idx in formula_template:
+                    # Formula-driven column — always write the formula, never raw data.
+                    formula = formula_template[col_idx].replace('{ROW}', str(append_row))
+                    cell.value = formula
+                    logging.debug(f"📐 Preserved formula at col {col_idx}: {formula}")
+                else:
+                    cell.value = cell_val
+
+                    # AUTO DATE FIX
+                    header_name = sheet_info.headers[col_idx - 1].strip().upper()
+                    if "DATE" in header_name:
+                        try:
+                            if isinstance(cell_val, str) and cell_val.strip():
+                                dt = datetime.strptime(cell_val.strip(), "%d/%m/%Y")
+                                cell.value = dt
+                                cell.number_format = "DD/MM/YYYY"
+                        except Exception:
+                            pass
 
             if entry_date and entry_site and entry_runtime and entry_found and entry_added:
                 existing_records.add((entry_date, entry_site, entry_runtime, entry_found, entry_added))

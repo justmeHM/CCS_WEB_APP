@@ -2841,7 +2841,10 @@ Example:
         <button class="btn btn-icon btn-ghost" onclick="closeModal('watchedPersonsModal')"><i class="fa-regular fa-xmark"></i></button>
       </div>
       <div class="modal-body">
-        <p class="text-sm mb-4" style="color:var(--neutral-600);">Add names exactly as they appear in the WhatsApp export (the sender name before the colon). Partial matches work — e.g. "John IHS" matches "~John IHS👨🏽‍🔧".</p>
+        <p class="text-sm mb-3" style="color:var(--neutral-600);">Add names exactly as they appear in the WhatsApp export (the sender name before the colon). Partial matches work — e.g. "John IHS" matches "~John IHS👨🏽‍🔧".</p>
+        <div class="card mb-4" style="background:var(--status-info-bg);border:1px solid var(--status-info);padding:var(--space-3);">
+          <p class="text-xs" style="color:var(--status-info);"><i class="fa-regular fa-calendar-clock"></i> <strong>Recency filter active:</strong> Only messages from the <strong>last 3 days</strong> will appear in watch list alerts. Older messages are automatically ignored.</p>
+        </div>
         <div class="flex gap-2 mb-4">
           <div class="input-group flex-1" style="margin-bottom:0;">
             <input type="text" class="input-field" id="watchPersonInput" placeholder=" " onkeydown="if(event.key==='Enter')addWatchedPerson()">
@@ -2900,21 +2903,57 @@ Example:
 
   <!-- View Past Cycle Modal -->
   <div class="modal-overlay" id="viewCycleModal">
-    <div class="modal-container" style="max-width:800px;max-height:90vh;overflow-y:auto;">
-      <div class="modal-header">
-        <div>
+    <div id="viewCycleModalContainer" class="modal-container" style="max-width:960px;width:95vw;max-height:92vh;overflow-y:auto;transition:all 0.3s ease;">
+      <div class="modal-header" style="position:sticky;top:0;background:white;z-index:10;border-bottom:1px solid var(--neutral-200);">
+        <div style="flex:1;min-width:0;">
           <h3 class="text-xl font-semibold" id="viewCycleTitle">Cycle Details</h3>
           <p class="text-sm mt-1" style="color:var(--neutral-500);" id="viewCycleSubtitle"></p>
         </div>
-        <button class="btn btn-icon btn-ghost" onclick="closeModal('viewCycleModal')">
-          <i class="fa-regular fa-xmark"></i>
-        </button>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <button class="btn btn-secondary btn-sm" id="cycleExpandBtn" onclick="toggleCycleFullscreen()" title="Expand to fullscreen">
+            <i class="fa-regular fa-expand" id="cycleExpandIcon"></i>
+            <span id="cycleExpandLabel">Expand</span>
+          </button>
+          <button class="btn btn-icon btn-ghost" onclick="closeModal('viewCycleModal')">
+            <i class="fa-regular fa-xmark"></i>
+          </button>
+        </div>
       </div>
-      <div class="modal-body" id="viewCycleContent"></div>
-      <div class="modal-footer">
+      <div class="modal-body" id="viewCycleContent" style="padding:var(--space-5);"></div>
+      <div class="modal-footer" style="position:sticky;bottom:0;background:white;z-index:10;border-top:1px solid var(--neutral-200);">
         <button class="btn btn-secondary" onclick="closeModal('viewCycleModal')">Close</button>
+        <button class="btn btn-secondary" id="cycleEditBtn" onclick="openCycleEditor(window._viewingCycleIdx)">
+          <i class="fa-regular fa-pen-to-square"></i> Edit Cycle
+        </button>
         <button class="btn btn-primary" onclick="exportCycleData(window._viewingCycleIdx)">
           <i class="fa-regular fa-download"></i> Export to Excel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cycle Editor Modal -->
+  <div class="modal-overlay" id="cycleEditorModal">
+    <div id="cycleEditorContainer" class="modal-container" style="max-width:980px;width:96vw;max-height:94vh;overflow-y:auto;transition:all 0.3s ease;">
+      <div class="modal-header" style="position:sticky;top:0;background:white;z-index:10;border-bottom:1px solid var(--neutral-200);">
+        <div style="flex:1;min-width:0;">
+          <h3 class="text-xl font-semibold" id="cycleEditorTitle">Edit Cycle</h3>
+          <p class="text-sm mt-1" style="color:var(--status-warning);" id="cycleEditorSubtitle"></p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+          <button class="btn btn-secondary btn-sm" id="cycleEditorExpandBtn" onclick="toggleCycleEditorFullscreen()" title="Expand">
+            <i class="fa-regular fa-expand" id="cycleEditorExpandIcon"></i>
+          </button>
+          <button class="btn btn-icon btn-ghost" onclick="closeModal('cycleEditorModal')">
+            <i class="fa-regular fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+      <div class="modal-body" id="cycleEditorContent" style="padding:var(--space-5);"></div>
+      <div class="modal-footer" style="position:sticky;bottom:0;background:white;z-index:10;border-top:1px solid var(--neutral-200);">
+        <button class="btn btn-secondary" onclick="closeModal('cycleEditorModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCycleEdits()">
+          <i class="fa-regular fa-floppy-disk"></i> Save All Changes
         </button>
       </div>
     </div>
@@ -3590,6 +3629,7 @@ Example:
 
     function renderNotifications() {
       buildNotifications();
+      runSmartAlerts();
       const badge = document.getElementById('notifBadge');
       const list = document.getElementById('notifList');
       if (!badge || !list) return;
@@ -3688,6 +3728,34 @@ Example:
       }
       if (overlay._triggerEl && typeof overlay._triggerEl.focus === 'function') {
         requestAnimationFrame(() => overlay._triggerEl.focus());
+      }
+      // Reset fullscreen state for cycle modal
+      if (modalId === 'viewCycleModal') {
+        const container = document.getElementById('viewCycleModalContainer');
+        const icon      = document.getElementById('cycleExpandIcon');
+        const label     = document.getElementById('cycleExpandLabel');
+        if (container) {
+          container.dataset.fullscreen = '0';
+          container.style.maxWidth   = '960px';
+          container.style.width      = '95vw';
+          container.style.maxHeight  = '92vh';
+          container.style.height     = '';
+          container.style.borderRadius = '';
+          overlay.style.alignItems   = '';
+        }
+        if (icon)  icon.className   = 'fa-regular fa-expand';
+        if (label) label.textContent = 'Expand';
+      }
+      // Reset fullscreen state for cycle editor modal
+      if (modalId === 'cycleEditorModal') {
+        const container = document.getElementById('cycleEditorContainer');
+        const icon      = document.getElementById('cycleEditorExpandIcon');
+        if (container) {
+          container.dataset.fullscreen = '0';
+          container.style.cssText = 'max-width:980px;width:96vw;max-height:94vh;overflow-y:auto;transition:all 0.3s ease;';
+          overlay.style.alignItems = '';
+        }
+        if (icon) icon.className = 'fa-regular fa-expand';
       }
     }
 
@@ -5293,12 +5361,21 @@ Example:
       if (!sel) return;
       
       sel.innerHTML = '<option value="">Select order</option>';
-      Object.values(DB.regions[DB.currentRegion].orders)
-        .filter(o => o.status === 'OPEN' && Object.keys(o.allocations || {}).length < Object.keys(DB.regions[DB.currentRegion].technicians).length)
+      const region = DB.regions[DB.currentRegion];
+      Object.values(region.orders)
+        .filter(o => o.status === 'OPEN' && Object.keys(o.allocations || {}).length < Object.keys(region.technicians).length)
+        .sort((a, b) => {
+          // Carried orders last, then oldest first within each group
+          if (a.carriedFromCycle && !b.carriedFromCycle) return 1;
+          if (!a.carriedFromCycle && b.carriedFromCycle) return -1;
+          return (a.createdDate || '').localeCompare(b.createdDate || '');
+        })
         .forEach(o => {
           const opt = document.createElement('option');
           opt.value = o.orderNo;
-          opt.textContent = `${o.orderNo} (${o.vehiclePlate})`;
+          opt.textContent = o.carriedFromCycle
+            ? `[OLD] ${o.orderNo} (${o.vehiclePlate})`
+            : `${o.orderNo} (${o.vehiclePlate})`;
           sel.appendChild(opt);
         });
     }
@@ -5355,7 +5432,8 @@ Example:
 
     function updateOrderStats() {
       const region = DB.regions[DB.currentRegion];
-      const orders = Object.values(region.orders);
+      // Only count current-cycle orders (not carried-over from old cycle)
+      const orders = Object.values(region.orders).filter(o => !o.carriedFromCycle);
       
       const assignedOrders = orders.filter(o => Object.keys(o.allocations || {}).length > 0);
       const unassignedOrders = orders.filter(o => Object.keys(o.allocations || {}).length === 0);
@@ -5382,8 +5460,28 @@ Example:
       
       const region = DB.regions[DB.currentRegion];
       let orders = Object.values(region.orders);
-      
-      orders = orders.filter(o => {
+
+      // Auto-remove carried orders that are now closed (balance <= 0)
+      // They should no longer appear anywhere once closed
+      let needsSave = false;
+      orders.forEach(o => {
+        if (o.carriedFromCycle && (o.totalLiters - o.suppliedTotal) <= 0) {
+          delete region.orders[o.orderNo];
+          needsSave = true;
+        }
+      });
+      if (needsSave) {
+        save();
+        orders = Object.values(region.orders);
+      }
+
+      // Split into current-cycle and carried (old cycle) orders
+      const currentCycleOrders = orders.filter(o => !o.carriedFromCycle);
+      const carriedOrders = orders.filter(o => !!o.carriedFromCycle);
+
+      // For filtering/display, apply status filter to current-cycle orders only
+      // Carried orders are always shown (they are always open by definition)
+      let filteredCurrentOrders = currentCycleOrders.filter(o => {
         const balance = o.totalLiters - o.suppliedTotal;
         const hasAllocations = Object.keys(o.allocations || {}).length > 0;
         
@@ -5397,12 +5495,14 @@ Example:
       });
       
       const techFilter = document.getElementById('orderFilterTech')?.value;
-      if (techFilter) orders = orders.filter(o => Object.keys(o.allocations || {}).includes(techFilter));
+      if (techFilter) {
+        filteredCurrentOrders = filteredCurrentOrders.filter(o => Object.keys(o.allocations || {}).includes(techFilter));
+      }
       
       const fromDate = document.getElementById('orderFilterFrom')?.value;
       const toDate = document.getElementById('orderFilterTo')?.value;
-      if (fromDate) orders = orders.filter(o => o.createdDate >= fromDate);
-      if (toDate) orders = orders.filter(o => o.createdDate <= toDate);
+      if (fromDate) filteredCurrentOrders = filteredCurrentOrders.filter(o => o.createdDate >= fromDate);
+      if (toDate) filteredCurrentOrders = filteredCurrentOrders.filter(o => o.createdDate <= toDate);
       
       const techSelect = document.getElementById('orderFilterTech');
       if (techSelect) {
@@ -5415,15 +5515,26 @@ Example:
         techSelect.value = currentValue;
       }
       
-      if (!orders.length) {
+      if (!filteredCurrentOrders.length && !carriedOrders.length) {
         container.innerHTML = renderEmptyState('orders', 'Create Order', 'toggleOrderForm()');
         return;
       }
       
-      orders.sort((a, b) => (b.createdDate || '').localeCompare(a.createdDate || ''));
+      // Sort current orders
+      filteredCurrentOrders.sort((a, b) => {
+        const aOpen = a.status !== 'CLOSED' && (a.totalLiters - a.suppliedTotal) > 0;
+        const bOpen = b.status !== 'CLOSED' && (b.totalLiters - b.suppliedTotal) > 0;
+        if (aOpen && !bOpen) return -1;
+        if (!aOpen && bOpen) return 1;
+        if (aOpen && bOpen) return (a.createdDate || '').localeCompare(b.createdDate || '');
+        return (b.createdDate || '').localeCompare(a.createdDate || '');
+      });
+
+      // Sort carried orders oldest first
+      carriedOrders.sort((a, b) => (a.createdDate || '').localeCompare(b.createdDate || ''));
       
-      const assignedOrders = orders.filter(o => Object.keys(o.allocations || {}).length > 0);
-      const unassignedOrders = orders.filter(o => Object.keys(o.allocations || {}).length === 0);
+      const assignedOrders = filteredCurrentOrders.filter(o => Object.keys(o.allocations || {}).length > 0);
+      const unassignedOrders = filteredCurrentOrders.filter(o => Object.keys(o.allocations || {}).length === 0);
       
       const groups = { 
         Unassigned: unassignedOrders,
@@ -5444,10 +5555,10 @@ Example:
       });
       
       const groupConfig = [
-        { key: 'Unassigned', label: 'Unassigned', color: 'var(--status-unassigned)', badge: 'badge-neutral', icon: '📋' },
-        { key: 'Overage', label: 'Overage', color: 'var(--status-danger)', badge: 'badge-danger', icon: '🔴' },
-        { key: 'Open',    label: 'Open (Assigned)', color: 'var(--status-success)', badge: 'badge-success', icon: '🟢' },
-        { key: 'Closed',  label: 'Closed',  color: 'var(--status-warning)', badge: 'badge-warning', icon: '🟡' },
+        { key: 'Unassigned', label: 'Unassigned',      color: 'var(--status-unassigned)', badge: 'badge-neutral', icon: '📋', collapsedByDefault: true  },
+        { key: 'Overage',    label: 'Overage',          color: 'var(--status-danger)',     badge: 'badge-danger',  icon: '🔴', collapsedByDefault: false },
+        { key: 'Open',       label: 'Open (Assigned)',  color: 'var(--status-success)',    badge: 'badge-success', icon: '🟢', collapsedByDefault: false },
+        { key: 'Closed',     label: 'Closed',           color: 'var(--status-warning)',    badge: 'badge-warning', icon: '🟡', collapsedByDefault: true  },
       ];
       
       let html = '';
@@ -5469,79 +5580,352 @@ Example:
         <div class="sticky-divider"></div>
         <div class="sticky-stat"><div class="sticky-stat-label">Balance (Assigned)</div><div class="sticky-stat-value text-danger-700">${openBalance}L</div></div>
         ${groups.Overage.length > 0 ? '<div class="sticky-divider"></div><div class="sticky-stat"><div class="sticky-stat-label text-danger-700">Overages</div><div class="sticky-stat-value text-danger-700">'+groups.Overage.length+'</div></div>' : ''}
+        ${carriedOrders.length > 0 ? `<div class="sticky-divider"></div><div class="sticky-stat"><div class="sticky-stat-label" style="color:var(--status-warning);">Carried Over</div><div class="sticky-stat-value" style="color:var(--status-warning);">${carriedOrders.length}</div></div>` : ''}
       </div>`;
-      
-      groupConfig.forEach(g => {
-        const gOrders = groups[g.key];
-        if (gOrders.length === 0) return;
-        const gId = 'group_' + g.key;
-        html += `<div class="order-group-header" onclick="toggleOrderGroup('${gId}')">
-          <span style="font-size:1rem;">${g.icon}</span>
-          <span class="order-group-title" style="color:${g.color};">${g.label}</span>
-          <span class="badge ${g.badge}">${gOrders.length}</span>
-          <i class="fa-regular fa-chevron-down order-group-chevron" id="chevg_${gId}"></i>
-        </div>
-        <div id="${gId}" class="order-group-body">`;
-        
-        gOrders.forEach(order => {
-          const balance = order.totalLiters - order.suppliedTotal;
-          const progress = (order.suppliedTotal / order.totalLiters) * 100;
-          const isNearly = progress >= 90 && progress < 100;
-          const hasAllocations = Object.keys(order.allocations || {}).length > 0;
-          const hasOverage = g.key === 'Overage';
-          
-          let statusClass, statusText, statusBadge;
-          if (!hasAllocations) {
-            statusClass = 'status-unassigned';
-            statusText = 'Unassigned';
-            statusBadge = 'badge-neutral';
-          } else if (hasOverage) {
-            statusClass = 'status-over';
-            statusText = 'Overage';
-            statusBadge = 'badge-danger';
-          } else if (balance <= 0) {
-            statusClass = 'status-closed';
-            statusText = 'Closed';
-            statusBadge = 'badge-warning';
-          } else {
-            statusClass = 'status-open';
-            statusText = 'Open';
-            statusBadge = 'badge-success';
+
+      // ── CARRIED-OVER ORDERS FROM OLD CYCLE (shown first, clearly separated) ──
+      if (carriedOrders.length > 0) {
+
+        // Read current carried-filter state from module-level vars
+        const carriedTechFilter  = window._carriedTechFilter  || '';
+        const carriedDateFrom    = window._carriedDateFrom    || '';
+        const carriedDateTo      = window._carriedDateTo      || '';
+
+        // Apply filters to carriedOrders
+        let visibleCarried = carriedOrders.filter(o => {
+          if (carriedTechFilter && !Object.keys(o.allocations || {}).includes(carriedTechFilter)) return false;
+          if (carriedDateFrom   && (o.createdDate || '') < carriedDateFrom) return false;
+          if (carriedDateTo     && (o.createdDate || '') > carriedDateTo)   return false;
+          return true;
+        });
+
+        // Collect all techs across all carried orders for the dropdown
+        const carriedTechSet = new Set();
+        carriedOrders.forEach(o => Object.keys(o.allocations || {}).forEach(t => carriedTechSet.add(t)));
+        const carriedTechOptions = [...carriedTechSet].sort().map(t =>
+          `<option value="${t}" ${carriedTechFilter === t ? 'selected' : ''}>${t}</option>`
+        ).join('');
+
+        // Group the (filtered) carried orders by source cycle
+        const cycleGroups = {};
+        visibleCarried.forEach(o => {
+          const key = o.carriedFromCycle || 'Previous Cycle';
+          if (!cycleGroups[key]) cycleGroups[key] = [];
+          cycleGroups[key].push(o);
+        });
+
+        const totalCarriedBalance = carriedOrders.reduce((s,o)=>s+(o.totalLiters-o.suppliedTotal),0);
+
+        html += `<div style="border:2px solid var(--status-warning);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--space-4);">
+          <div style="background:linear-gradient(135deg,#7a3e00,#b45a00);color:white;padding:var(--space-3) var(--space-4);display:flex;align-items:center;gap:var(--space-3);">
+            <span style="font-size:1.1rem;">⏳</span>
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:0.95rem;letter-spacing:0.03em;">CARRIED-OVER ORDERS — PREVIOUS CYCLE</div>
+              <div style="font-size:0.72rem;opacity:0.85;margin-top:2px;">These orders were still open when the last cycle ended. NOT counted in ${DB.currentCycleName} totals. Auto-removed once fully supplied.</div>
+            </div>
+            <span style="background:rgba(255,255,255,0.2);padding:3px 10px;border-radius:999px;font-size:0.75rem;font-weight:700;">${carriedOrders.length} order${carriedOrders.length!==1?'s':''} · ${totalCarriedBalance}L outstanding</span>
+          </div>
+          <div style="background:rgba(122,62,0,0.06);border-bottom:1px solid rgba(217,119,6,0.25);padding:10px var(--space-4);display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:0.72rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;"><i class="fa-regular fa-filter"></i> Filter</span>
+            <div style="position:relative;min-width:150px;flex:1;max-width:200px;">
+              <select id="carriedTechFilter" onchange="applyCarriedFilters()" style="width:100%;padding:5px 28px 5px 10px;border:1px solid rgba(217,119,6,0.4);border-radius:var(--radius-md);font-size:0.78rem;background:white;color:var(--neutral-800);appearance:none;cursor:pointer;">
+                <option value="">All Technicians</option>
+                ${carriedTechOptions}
+              </select>
+              <i class="fa-regular fa-chevron-down" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:0.65rem;color:#92400e;"></i>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;flex:1;max-width:175px;">
+              <label style="font-size:0.7rem;color:#92400e;font-weight:600;white-space:nowrap;">From</label>
+              <input type="date" id="carriedDateFrom" value="${carriedDateFrom}" onchange="applyCarriedFilters()"
+                style="flex:1;padding:5px 8px;border:1px solid rgba(217,119,6,0.4);border-radius:var(--radius-md);font-size:0.78rem;background:white;color:var(--neutral-800);">
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;flex:1;max-width:175px;">
+              <label style="font-size:0.7rem;color:#92400e;font-weight:600;white-space:nowrap;">To</label>
+              <input type="date" id="carriedDateTo" value="${carriedDateTo}" onchange="applyCarriedFilters()"
+                style="flex:1;padding:5px 8px;border:1px solid rgba(217,119,6,0.4);border-radius:var(--radius-md);font-size:0.78rem;background:white;color:var(--neutral-800);">
+            </div>
+            ${(carriedTechFilter || carriedDateFrom || carriedDateTo) ? `
+            <button onclick="clearCarriedFilters()" style="padding:5px 12px;border:1px solid rgba(217,119,6,0.5);border-radius:var(--radius-md);background:rgba(255,255,255,0.7);color:#92400e;font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">
+              <i class="fa-regular fa-xmark"></i> Clear
+            </button>` : ''}
+            <span style="font-size:0.72rem;color:#b45a00;margin-left:auto;white-space:nowrap;">${visibleCarried.length} of ${carriedOrders.length} shown</span>
+          </div>
+          <div style="background:rgba(180,90,0,0.04);padding:var(--space-3);">
+          ${visibleCarried.length === 0 ? `
+            <div style="text-align:center;padding:24px;color:#b45a00;font-size:0.85rem;">
+              <i class="fa-regular fa-filter" style="font-size:1.5rem;display:block;margin-bottom:8px;opacity:0.5;"></i>
+              No carried orders match the current filters.
+              <br><button onclick="clearCarriedFilters()" style="margin-top:8px;padding:4px 12px;border:1px solid rgba(217,119,6,0.4);border-radius:999px;background:white;color:#92400e;font-size:0.75rem;cursor:pointer;">Clear Filters</button>
+            </div>` : ''}`;
+
+        Object.entries(cycleGroups).forEach(([cycleName, cOrders]) => {
+          const gId = 'carried_group_' + cycleName.replace(/\s+/g,'_');
+          html += `<div class="order-group-header" onclick="toggleOrderGroup('${gId}')" style="border-color:var(--status-warning);background:rgba(217,119,6,0.08);margin-bottom:var(--space-2);">
+            <span style="font-size:0.9rem;">🔄</span>
+            <span class="order-group-title" style="color:#92400e;">From: ${cycleName}</span>
+            <span class="badge badge-warning">${cOrders.length}</span>
+            <span style="font-size:0.72rem;color:var(--status-warning);margin-left:auto;margin-right:var(--space-2);">Balance: ${cOrders.reduce((s,o)=>s+(o.totalLiters-o.suppliedTotal),0)}L remaining</span>
+            <i class="fa-regular fa-chevron-down order-group-chevron" id="chevg_${gId}"></i>
+          </div>
+          <div id="${gId}" class="order-group-body">`;
+
+          cOrders.forEach(order => {
+            const balance = order.totalLiters - order.suppliedTotal;
+            const progress = order.totalLiters > 0 ? (order.suppliedTotal / order.totalLiters) * 100 : 0;
+            const isNearly = progress >= 90 && progress < 100;
+            const allocEntries = Object.entries(order.allocations || {});
+
+            // Per-tech supply breakdown for follow-up
+            let techRowsHtml = '';
+            allocEntries.forEach(([tech, alloc]) => {
+              const techSupplied = Object.values(region.dailyLog).flat()
+                .filter(e => e.orderNo === order.orderNo && e.technician === tech)
+                .reduce((s, e) => s + e.supplied, 0);
+              const techRemaining = alloc - techSupplied;
+              const techPct = alloc > 0 ? Math.min(100, (techSupplied / alloc) * 100) : 0;
+              const plate = region.technicianPlates?.[tech] || '—';
+              const isOver = techSupplied > alloc;
+              techRowsHtml += `
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.7);border-radius:var(--radius-md);margin-bottom:6px;border:1px solid rgba(217,119,6,0.2);">
+                  <div style="width:32px;height:32px;border-radius:50%;background:rgba(217,119,6,0.15);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.78rem;color:#92400e;flex-shrink:0;">${tech.charAt(0).toUpperCase()}</div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:0.82rem;color:var(--neutral-800);">${tech}</div>
+                    <div style="font-size:0.7rem;color:var(--neutral-500);">🚗 ${plate}</div>
+                    <div style="margin-top:4px;">
+                      <div style="height:5px;background:var(--neutral-200);border-radius:999px;overflow:hidden;">
+                        <div style="height:100%;width:${techPct}%;background:${isOver ? 'var(--status-danger)' : techPct >= 90 ? 'var(--status-warning)' : 'var(--status-success)'};border-radius:999px;transition:width 0.6s;"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-size:0.75rem;font-weight:700;color:${isOver ? 'var(--status-danger)' : 'var(--neutral-700)'};">${techSupplied}/${alloc}L</div>
+                    <div style="font-size:0.68rem;color:${techRemaining > 0 ? 'var(--status-warning)' : 'var(--status-success)'};">
+                      ${isOver ? `+${(techSupplied-alloc).toFixed(1)}L over` : techRemaining > 0 ? `${techRemaining}L outstanding` : '✓ Complete'}
+                    </div>
+                  </div>
+                </div>`;
+            });
+
+            // Recent supply history for this order
+            const supplyHistory = [];
+            Object.entries(region.dailyLog).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([date, entries]) => {
+              entries.forEach(e => {
+                if (e.orderNo === order.orderNo) supplyHistory.push({ date, ...e });
+              });
+            });
+            const histHtml = supplyHistory.length === 0
+              ? `<div style="font-size:0.75rem;color:var(--neutral-400);font-style:italic;padding:6px 0;">No supply entries recorded yet.</div>`
+              : supplyHistory.slice(0, 8).map(e => `
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;font-size:0.74rem;border-bottom:1px solid var(--neutral-100);">
+                    <span style="color:var(--neutral-500);">${e.date}</span>
+                    <span style="font-weight:600;color:var(--neutral-700);">${e.technician}</span>
+                    <span style="font-weight:700;color:var(--status-success);font-family:var(--font-mono);">+${e.supplied}L</span>
+                  </div>`).join('') + (supplyHistory.length > 8 ? `<div style="font-size:0.7rem;color:var(--neutral-400);padding:4px 8px;">…and ${supplyHistory.length - 8} more entries</div>` : '');
+
+            const cardId = 'carried_detail_' + order.orderNo.replace(/[^a-zA-Z0-9]/g,'_');
+
+            html += `<div class="order-card${isNearly ? ' nearly-full' : ''}" data-order-no="${order.orderNo}" style="border-left:4px solid var(--status-warning);margin-bottom:10px;">
+              <!-- CLICKABLE HEADER — opens full detail -->
+              <div class="order-header" onclick="toggleCarriedDetail('${cardId}')" style="cursor:pointer;">
+                <div class="order-status-indicator" style="background:var(--status-warning);width:10px;height:10px;border-radius:50%;flex-shrink:0;"></div>
+                <div class="order-info" style="flex:1;">
+                  <div class="order-title" style="display:flex;align-items:center;gap:6px;">
+                    ${order.orderNo}
+                    <span style="font-size:0.65rem;background:rgba(217,119,6,0.18);color:#92400e;border-radius:999px;padding:1px 7px;font-weight:700;letter-spacing:0.04em;">OLD CYCLE</span>
+                    <span style="font-size:0.65rem;color:var(--neutral-400);">From: ${order.carriedFromCycle}</span>
+                  </div>
+                  <div class="order-meta">
+                    <span><i class="fa-regular fa-truck"></i> ${order.vehiclePlate}</span>
+                    <span><i class="fa-regular fa-calendar"></i> ${order.createdDate || '—'}</span>
+                    <span><i class="fa-regular fa-users"></i> ${allocEntries.length} tech${allocEntries.length!==1?'s':''}: ${allocEntries.map(([t])=>t).join(', ')}</span>
+                  </div>
+                </div>
+                <div class="order-stats">
+                  <div class="order-progress">
+                    <div class="progress-bar">
+                      <div class="progress-fill warning" style="width:${progress}%;"></div>
+                    </div>
+                    <div class="text-sm text-center mt-1">${order.suppliedTotal}/${order.totalLiters}L</div>
+                  </div>
+                  <span class="badge badge-warning">${balance}L remaining</span>
+                </div>
+                <i class="fa-regular fa-chevron-down order-chevron" id="chev_carried_${order.orderNo.replace(/[^a-zA-Z0-9]/g,'_')}" style="transition:transform 0.25s;"></i>
+              </div>
+
+              <!-- FULL DETAIL PANEL (collapsed by default) -->
+              <div id="${cardId}" style="display:none;" class="order-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                  <div style="background:var(--neutral-50);border-radius:var(--radius-md);padding:10px;border:1px solid var(--neutral-200);">
+                    <div style="font-size:0.7rem;color:var(--neutral-500);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Order</div>
+                    <div style="font-weight:700;font-family:var(--font-mono);">${order.orderNo}</div>
+                  </div>
+                  <div style="background:var(--neutral-50);border-radius:var(--radius-md);padding:10px;border:1px solid var(--neutral-200);">
+                    <div style="font-size:0.7rem;color:var(--neutral-500);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Vehicle</div>
+                    <div style="font-weight:700;font-family:var(--font-mono);">${order.vehiclePlate}</div>
+                  </div>
+                  <div style="background:var(--neutral-50);border-radius:var(--radius-md);padding:10px;border:1px solid var(--neutral-200);">
+                    <div style="font-size:0.7rem;color:var(--neutral-500);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Created</div>
+                    <div style="font-weight:600;">${order.createdDate || '—'}</div>
+                  </div>
+                  <div style="background:rgba(217,119,6,0.08);border-radius:var(--radius-md);padding:10px;border:1px solid rgba(217,119,6,0.25);">
+                    <div style="font-size:0.7rem;color:#92400e;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Outstanding</div>
+                    <div style="font-weight:700;color:#b45a00;font-family:var(--font-mono);">${balance}L</div>
+                  </div>
+                  <div style="background:var(--neutral-50);border-radius:var(--radius-md);padding:10px;border:1px solid var(--neutral-200);">
+                    <div style="font-size:0.7rem;color:var(--neutral-500);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Total Ordered</div>
+                    <div style="font-weight:600;font-family:var(--font-mono);">${order.totalLiters}L</div>
+                  </div>
+                  <div style="background:var(--status-success-bg);border-radius:var(--radius-md);padding:10px;border:1px solid var(--status-success);">
+                    <div style="font-size:0.7rem;color:var(--status-success);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Already Supplied</div>
+                    <div style="font-weight:700;color:var(--status-success);font-family:var(--font-mono);">${order.suppliedTotal}L</div>
+                  </div>
+                </div>
+
+                <!-- Overall progress bar -->
+                <div style="margin-bottom:14px;">
+                  <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--neutral-500);margin-bottom:4px;">
+                    <span>Overall Progress</span><span style="font-weight:700;">${progress.toFixed(1)}%</span>
+                  </div>
+                  <div style="height:8px;background:var(--neutral-200);border-radius:999px;overflow:hidden;">
+                    <div style="height:100%;width:${progress}%;background:var(--status-warning);border-radius:999px;transition:width 0.8s;"></div>
+                  </div>
+                </div>
+
+                <!-- Tech allocations & outstanding per tech -->
+                <div style="margin-bottom:14px;">
+                  <div style="font-size:0.78rem;font-weight:700;color:var(--neutral-700);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                    <i class="fa-regular fa-users" style="color:var(--status-warning);"></i> Technician Breakdown
+                  </div>
+                  ${techRowsHtml || '<div style="font-size:0.75rem;color:var(--neutral-400);font-style:italic;">No technicians allocated.</div>'}
+                </div>
+
+                <!-- Supply history -->
+                <div style="margin-bottom:14px;">
+                  <div style="font-size:0.78rem;font-weight:700;color:var(--neutral-700);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+                    <i class="fa-regular fa-clock-rotate-left" style="color:var(--status-info);"></i> Supply History
+                  </div>
+                  <div style="border:1px solid var(--neutral-200);border-radius:var(--radius-md);overflow:hidden;background:white;">
+                    ${histHtml}
+                  </div>
+                </div>
+
+                <!-- Action buttons -->
+                <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:10px;border-top:1px solid var(--neutral-100);">
+                  <button class="btn btn-secondary btn-sm" onclick="editOrder('${order.orderNo}')">
+                    <i class="fa-regular fa-pen-to-square"></i> Edit Order
+                  </button>
+                  <button class="btn btn-secondary btn-sm" onclick="deleteOrder('${order.orderNo}')">
+                    <i class="fa-regular fa-trash"></i> Remove
+                  </button>
+                </div>
+              </div>
+            </div>`;
+          });
+
+          html += `</div>`; // close group body
+        });
+
+        html += `</div></div></div>`; // close: content area + filter bar wrapper + outer border panel
+      }
+
+      // ── CURRENT CYCLE ORDERS ──
+      if (filteredCurrentOrders.length > 0) {
+        groupConfig.forEach(g => {
+          const gOrders = groups[g.key];
+          if (gOrders.length === 0) return;
+          const gId = 'group_' + g.key;
+
+          // Persist user-expanded state across re-renders
+          const stateKey = '_grpOpen_' + g.key;
+          // If user has explicitly toggled, honour it; otherwise use collapsedByDefault
+          const isOpen = (window[stateKey] !== undefined) ? window[stateKey] : !g.collapsedByDefault;
+
+          // Summary line shown inside the header when collapsed
+          const summaryText = g.key === 'Closed'
+            ? `${gOrders.length} closed order${gOrders.length!==1?'s':''} · ${gOrders.reduce((s,o)=>s+o.suppliedTotal,0)}L supplied`
+            : g.key === 'Unassigned'
+            ? `${gOrders.length} unassigned order${gOrders.length!==1?'s':''} · ${gOrders.reduce((s,o)=>s+o.totalLiters,0)}L total`
+            : '';
+
+          html += `<div class="order-group-header" onclick="toggleOrderGroup('${gId}')">
+            <span style="font-size:1rem;">${g.icon}</span>
+            <span class="order-group-title" style="color:${g.color};">${g.label}</span>
+            <span class="badge ${g.badge}">${gOrders.length}</span>
+            ${g.collapsedByDefault && !isOpen && summaryText
+              ? `<span style="font-size:0.72rem;color:var(--neutral-400);margin-left:4px;">${summaryText}</span>`
+              : ''}
+            ${g.collapsedByDefault
+              ? `<span style="font-size:0.68rem;color:${g.color};opacity:0.8;margin-left:auto;margin-right:8px;font-weight:600;">${isOpen ? 'Click to hide' : 'Click to show'}</span>`
+              : ''}
+            <i class="fa-regular fa-chevron-down order-group-chevron${isOpen ? '' : ' collapsed'}" id="chevg_${gId}"></i>
+          </div>
+          <div id="${gId}" class="order-group-body" style="display:${isOpen ? 'block' : 'none'};">`;
+
+          // Only render card HTML when the group is open (lazy rendering for performance)
+          if (isOpen) {
+            gOrders.forEach(order => {
+              const balance = order.totalLiters - order.suppliedTotal;
+              const progress = (order.suppliedTotal / order.totalLiters) * 100;
+              const isNearly = progress >= 90 && progress < 100;
+              const hasAllocations = Object.keys(order.allocations || {}).length > 0;
+              const hasOverage = g.key === 'Overage';
+              
+              let statusClass, statusText, statusBadge;
+              if (!hasAllocations) {
+                statusClass = 'status-unassigned';
+                statusText = 'Unassigned';
+                statusBadge = 'badge-neutral';
+              } else if (hasOverage) {
+                statusClass = 'status-over';
+                statusText = 'Overage';
+                statusBadge = 'badge-danger';
+              } else if (balance <= 0) {
+                statusClass = 'status-closed';
+                statusText = 'Closed';
+                statusBadge = 'badge-warning';
+              } else {
+                statusClass = 'status-open';
+                statusText = 'Open';
+                statusBadge = 'badge-success';
+              }
+              
+              const nearlyClass = isNearly ? ' nearly-full' : '';
+              
+              html += `<div class="order-card${nearlyClass}" data-order-no="${order.orderNo}">
+                <div class="order-header" onclick="toggleOrderBody('${order.orderNo}')">
+                  <div class="order-status-indicator ${statusClass}"></div>
+                  <div class="order-info">
+                    <div class="order-title">${order.orderNo}</div>
+                    <div class="order-meta">
+                      <span><i class="fa-regular fa-truck"></i> ${order.vehiclePlate}</span>
+                      <span><i class="fa-regular fa-calendar"></i> ${order.createdDate || '—'}</span>
+                      <span><i class="fa-regular fa-users"></i> ${hasAllocations ? Object.keys(order.allocations || {}).length + ' techs' : 'Unassigned'}</span>
+                      ${isNearly ? '<span class="text-warning-700 font-semibold">⚠️ Nearly full</span>' : ''}
+                    </div>
+                  </div>
+                  <div class="order-stats">
+                    <div class="order-progress">
+                      <div class="progress-bar">
+                        <div class="progress-fill ${!hasAllocations ? '' : (progress >= 100 ? 'warning' : isNearly ? 'warning' : progress >= 75 ? 'success' : 'info')}" style="width: ${hasAllocations ? progress : 0}%;"></div>
+                      </div>
+                      <div class="text-sm text-center mt-1">${order.suppliedTotal}/${order.totalLiters}L</div>
+                    </div>
+                    <span class="badge ${statusBadge}">${statusText}</span>
+                  </div>
+                  <i class="fa-regular fa-chevron-down order-chevron" id="chev_${order.orderNo}"></i>
+                </div>
+                <div class="order-body" id="body_${order.orderNo}" style="display: none;">
+                  ${renderOrderDetails(order)}
+                </div>
+              </div>`;
+            });
           }
           
-          const nearlyClass = isNearly ? ' nearly-full' : '';
-          
-          html += `<div class="order-card${nearlyClass}" data-order-no="${order.orderNo}">
-            <div class="order-header" onclick="toggleOrderBody('${order.orderNo}')">
-              <div class="order-status-indicator ${statusClass}"></div>
-              <div class="order-info">
-                <div class="order-title">${order.orderNo}</div>
-                <div class="order-meta">
-                  <span><i class="fa-regular fa-truck"></i> ${order.vehiclePlate}</span>
-                  <span><i class="fa-regular fa-calendar"></i> ${order.createdDate || '—'}</span>
-                  <span><i class="fa-regular fa-users"></i> ${hasAllocations ? Object.keys(order.allocations || {}).length + ' techs' : 'Unassigned'}</span>
-                  ${isNearly ? '<span class="text-warning-700 font-semibold">⚠️ Nearly full</span>' : ''}
-                </div>
-              </div>
-              <div class="order-stats">
-                <div class="order-progress">
-                  <div class="progress-bar">
-                    <div class="progress-fill ${!hasAllocations ? '' : (progress >= 100 ? 'warning' : isNearly ? 'warning' : progress >= 75 ? 'success' : 'info')}" style="width: ${hasAllocations ? progress : 0}%;"></div>
-                  </div>
-                  <div class="text-sm text-center mt-1">${order.suppliedTotal}/${order.totalLiters}L</div>
-                </div>
-                <span class="badge ${statusBadge}">${statusText}</span>
-              </div>
-              <i class="fa-regular fa-chevron-down order-chevron" id="chev_${order.orderNo}"></i>
-            </div>
-            <div class="order-body" id="body_${order.orderNo}" style="display: none;">
-              ${renderOrderDetails(order)}
-            </div>
-          </div>`;
+          html += '</div>';
         });
-        
-        html += '</div>';
-      });
+      } else if (carriedOrders.length === 0) {
+        html += renderEmptyState('orders', 'Create Order', 'toggleOrderForm()');
+      }
       
       container.innerHTML = html;
     }
@@ -5551,8 +5935,20 @@ Example:
       const chev = document.getElementById('chevg_' + gId);
       if (!body) return;
       const isHidden = body.style.display === 'none';
-      body.style.display = isHidden ? 'block' : 'none';
-      if (chev) chev.classList.toggle('collapsed', !isHidden);
+      const nowOpen = isHidden;
+      body.style.display = nowOpen ? 'block' : 'none';
+      if (chev) chev.classList.toggle('collapsed', !nowOpen);
+
+      // Persist state for lazy groups (Unassigned / Closed)
+      const key = gId.replace('group_', '');
+      const stateKey = '_grpOpen_' + key;
+      window[stateKey] = nowOpen;
+
+      // Lazy-render: if opening a collapsed group that has no cards yet, re-render the list
+      // so cards get injected. Only needed for groups that were hidden by default.
+      if (nowOpen && body.children.length === 0) {
+        renderOrdersList();
+      }
     }
 
     function toggleOrderBody(orderNo) {
@@ -5566,6 +5962,64 @@ Example:
         body.style.display = 'none';
         chev.style.transform = 'rotate(0)';
       }
+    }
+
+    function toggleCycleFullscreen() {
+      const container = document.getElementById('viewCycleModalContainer');
+      const icon      = document.getElementById('cycleExpandIcon');
+      const label     = document.getElementById('cycleExpandLabel');
+      const overlay   = document.getElementById('viewCycleModal');
+      if (!container) return;
+
+      const isFullscreen = container.dataset.fullscreen === '1';
+      if (isFullscreen) {
+        // Restore
+        container.dataset.fullscreen = '0';
+        container.style.maxWidth   = '960px';
+        container.style.width      = '95vw';
+        container.style.maxHeight  = '92vh';
+        container.style.height     = '';
+        container.style.borderRadius = '';
+        overlay.style.alignItems   = '';
+        icon.className  = 'fa-regular fa-expand';
+        label.textContent = 'Expand';
+      } else {
+        // Fullscreen
+        container.dataset.fullscreen = '1';
+        container.style.maxWidth   = '100vw';
+        container.style.width      = '100vw';
+        container.style.maxHeight  = '100vh';
+        container.style.height     = '100vh';
+        container.style.borderRadius = '0';
+        overlay.style.alignItems   = 'flex-start';
+        icon.className  = 'fa-regular fa-compress';
+        label.textContent = 'Compress';
+      }
+    }
+
+    function toggleCarriedDetail(cardId) {
+      const panel = document.getElementById(cardId);
+      if (!panel) return;
+      // chevron id is 'chev_carried_' + the safe orderNo suffix stored in cardId
+      const suffix = cardId.replace('carried_detail_', '');
+      const chev = document.getElementById('chev_carried_' + suffix);
+      const isHidden = panel.style.display === 'none';
+      panel.style.display = isHidden ? 'block' : 'none';
+      if (chev) chev.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+
+    function applyCarriedFilters() {
+      window._carriedTechFilter = document.getElementById('carriedTechFilter')?.value || '';
+      window._carriedDateFrom   = document.getElementById('carriedDateFrom')?.value   || '';
+      window._carriedDateTo     = document.getElementById('carriedDateTo')?.value     || '';
+      renderOrdersList();
+    }
+
+    function clearCarriedFilters() {
+      window._carriedTechFilter = '';
+      window._carriedDateFrom   = '';
+      window._carriedDateTo     = '';
+      renderOrdersList();
     }
 
     function renderOrderDetails(order) {
@@ -7450,7 +7904,8 @@ Example:
       const monthAgo = new Date(now - 30*86400000).toISOString().slice(0,10);
 
       const region = DB.regions[DB.currentRegion];
-      const allOrders = Object.values(region.orders);
+      // Exclude carried-over orders from previous cycle in all KPI calculations
+      const allOrders = Object.values(region.orders).filter(o => !o.carriedFromCycle);
       
       const assignedOrders = allOrders.filter(o => Object.keys(o.allocations || {}).length > 0);
       const unassignedOrders = allOrders.filter(o => Object.keys(o.allocations || {}).length === 0);
@@ -7630,7 +8085,7 @@ Example:
       if (openOrders.length === 0) {
         openList.innerHTML = renderEmptyState('orders', 'Create Order', 'setPage(\'orders\',null)');
       } else {
-        openList.innerHTML = openOrders.sort((a,b)=>(b.suppliedTotal/b.totalLiters)-(a.suppliedTotal/a.totalLiters)).slice(0,5).map(o => {
+        openList.innerHTML = openOrders.sort((a,b)=>(a.createdDate||'').localeCompare(b.createdDate||'')).slice(0,5).map(o => {
           const p = Math.min(100,(o.suppliedTotal/o.totalLiters)*100);
           const bal = o.totalLiters - o.suppliedTotal;
           const isNearly = p >= 90;
@@ -7693,7 +8148,8 @@ Example:
     // ===== CYCLE MANAGEMENT =====
     function openEndCycleModal() {
       const region = DB.regions[DB.currentRegion];
-      const allOrders = Object.values(region.orders);
+      // Only count assigned orders in the summary
+      const allOrders = Object.values(region.orders).filter(o => Object.keys(o.allocations || {}).length > 0);
       const totalOrders = allOrders.length;
       const openOrders = allOrders.filter(o => (o.totalLiters - o.suppliedTotal) > 0).length;
       const totalSupplied = allOrders.reduce((s,o) => s + o.suppliedTotal, 0);
@@ -7727,7 +8183,8 @@ Example:
           </div>
           <div style="background:white;border-radius:var(--radius-md);padding:10px;border:1px solid var(--neutral-200);">
             <div class="text-xs text-neutral-500">Total Orders</div>
-            <div class="font-semibold">${totalOrders} <span class="text-xs text-warning-600">(${openOrders} still open)</span></div>
+            <div class="font-semibold">${totalOrders}</div>
+            ${openOrders > 0 ? `<div class="text-xs mt-1" style="color:var(--status-warning);">⏳ ${openOrders} assigned open order${openOrders!==1?'s':''} will carry over</div>` : ''}
           </div>
           <div style="background:white;border-radius:var(--radius-md);padding:10px;border:1px solid var(--neutral-200);">
             <div class="text-xs text-neutral-500">Total Supplied</div>
@@ -7763,11 +8220,34 @@ Example:
       };
       DB.cycles.push(snapshot);
 
-      // Reset all region data (keep technicians, plates, targets)
+      // Reset all region data — but carry open orders forward with a cycle tag
       Object.keys(DB.regions).forEach(rName => {
         const r = DB.regions[rName];
-        r.orders = {};
-        r.dailyLog = {};
+
+        // Only carry ASSIGNED open orders (balance > 0 AND has at least one allocation).
+        // Unassigned orders were never delivered — they are dropped on cycle end.
+        const carryOrders = {};
+        Object.entries(r.orders).forEach(([orderNo, order]) => {
+          const balance = order.totalLiters - order.suppliedTotal;
+          const isAssigned = Object.keys(order.allocations || {}).length > 0;
+          if (balance > 0 && isAssigned) {
+            carryOrders[orderNo] = {
+              ...order,
+              carriedFromCycle: DB.currentCycleName,
+              carriedFromCycleStartDate: DB.currentCycleStartDate
+            };
+          }
+        });
+
+        // Build a carried daily log — only entries relevant to carried orders
+        const carryLog = {};
+        Object.entries(r.dailyLog).forEach(([date, entries]) => {
+          const relevant = entries.filter(e => e.orderNo && carryOrders[e.orderNo]);
+          if (relevant.length > 0) carryLog[date] = relevant;
+        });
+
+        r.orders = carryOrders;
+        r.dailyLog = carryLog;
         r.monthlyTarget = null;
         r.unassignedComments = {};
         // Keep: technicians, technicianPlates, techMonthlyTargets
@@ -7787,10 +8267,11 @@ Example:
     function renderCyclesPage(container) {
       const cycles = DB.cycles || [];
       
-      // Compute summary for the current live cycle too
+      // Compute summary for the current live cycle — assigned orders only
       let currentSummary = { orders: 0, supplied: 0, techs: new Set() };
       Object.values(DB.regions).forEach(r => {
-        currentSummary.orders += Object.keys(r.orders).length;
+        // Count only assigned orders
+        currentSummary.orders += Object.values(r.orders).filter(o => Object.keys(o.allocations || {}).length > 0).length;
         Object.values(r.dailyLog).forEach(entries => entries.forEach(e => {
           if (!e.unallocated) { currentSummary.supplied += e.supplied; currentSummary.techs.add(e.technician); }
         }));
@@ -7828,7 +8309,10 @@ Example:
           </div>
         ` : cycles.slice().reverse().map((cycle, revIdx) => {
           const idx = cycles.length - 1 - revIdx;
-          const allOrders = Object.values(cycle.regions).flatMap(r => Object.values(r.orders));
+          // Only count assigned orders (ignore unassigned fuel) in all summaries
+          const allOrders = Object.values(cycle.regions).flatMap(r =>
+            Object.values(r.orders).filter(o => Object.keys(o.allocations || {}).length > 0)
+          );
           const totalOrders = allOrders.length;
           const totalSupplied = allOrders.reduce((s,o) => s + o.suppliedTotal, 0);
           const totalLiters = allOrders.reduce((s,o) => s + o.totalLiters, 0);
@@ -7906,111 +8390,692 @@ Example:
       const cycle = DB.cycles[cycleIdx];
       if (!cycle) return;
 
+      const cycleDays = Math.round((new Date(cycle.endDate) - new Date(cycle.startDate)) / 86400000) + 1;
+
       document.getElementById('viewCycleTitle').textContent = `📋 ${cycle.name}`;
-      document.getElementById('viewCycleSubtitle').textContent = `${new Date(cycle.startDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})} → ${new Date(cycle.endDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}`;
+      document.getElementById('viewCycleSubtitle').textContent =
+        `${new Date(cycle.startDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})} → ${new Date(cycle.endDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})} · ${cycleDays} day${cycleDays!==1?'s':''}`;
+
+      // ── Aggregate across ALL regions — ASSIGNED ORDERS ONLY ──────────────
+      const allOrders     = Object.values(cycle.regions).flatMap(r => Object.values(r.orders));
+      // Only count orders that have at least one tech allocated (ignore unassigned fuel)
+      const assignedOrders= allOrders.filter(o => Object.keys(o.allocations || {}).length > 0);
+      const totalOrders   = assignedOrders.length;
+      const totalOrdered  = assignedOrders.reduce((s,o) => s + o.totalLiters,  0);
+      const totalSupplied = assignedOrders.reduce((s,o) => s + o.suppliedTotal, 0);
+      const closedOrders  = assignedOrders.filter(o => (o.totalLiters - o.suppliedTotal) <= 0).length;
+      const openOrders    = assignedOrders.filter(o => (o.totalLiters - o.suppliedTotal) >  0).length;
+      const completionPct = totalOrdered > 0 ? Math.min(100, (totalSupplied / totalOrdered) * 100) : 0;
+
+      // Carry-overs: assigned orders still open at cycle end
+      const carryOvers = assignedOrders.filter(o => (o.totalLiters - o.suppliedTotal) > 0);
+      const carryBalance = carryOvers.reduce((s,o) => s + (o.totalLiters - o.suppliedTotal), 0);
+
+      // Per-tech totals (allocated only, across all regions)
+      const techTotals = {};   // tech -> { supplied, orders: Set, days: Set }
+      const techTargets = {};  // tech -> allocated litres
+      Object.entries(cycle.regions).forEach(([, r]) => {
+        Object.values(r.orders).forEach(o => {
+          Object.entries(o.allocations || {}).forEach(([tech, alloc]) => {
+            if (!techTargets[tech]) techTargets[tech] = 0;
+            techTargets[tech] += alloc;
+          });
+        });
+        Object.entries(r.dailyLog).forEach(([date, entries]) => {
+          entries.forEach(e => {
+            if (e.unallocated || !e.technician) return;
+            if (!techTotals[e.technician]) techTotals[e.technician] = { supplied: 0, orders: new Set(), days: new Set() };
+            techTotals[e.technician].supplied += e.supplied;
+            if (e.orderNo) techTotals[e.technician].orders.add(e.orderNo);
+            techTotals[e.technician].days.add(date);
+          });
+        });
+      });
+      const sortedTechs = Object.entries(techTotals).sort((a,b) => b[1].supplied - a[1].supplied);
+      const maxTechSupply = sortedTechs.length > 0 ? sortedTechs[0][1].supplied : 1;
+
+      // Color palette for tech bars
+      const barColors = ['#2B6CB0','#276749','#C53030','#744210','#553C9A','#0987A0','#97266D','#2C7A7B'];
+
+      // ── BUILD HTML ────────────────────────────────────────────────────────
+      let html = '';
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 1 — HEADER BANNER
+      // ══════════════════════════════════════════════════════════════════════
+      html += `
+        <div style="background:linear-gradient(135deg,#0f2240,#1a3a5c);border-radius:16px;padding:28px 32px;margin-bottom:24px;color:white;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+            <div>
+              <div style="font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;opacity:0.55;margin-bottom:6px;">CCS FUEL SYSTEM · CYCLE REPORT</div>
+              <div style="font-size:1.9rem;font-weight:900;letter-spacing:-0.01em;line-height:1.1;">${cycle.name}</div>
+              <div style="font-size:0.88rem;opacity:0.7;margin-top:8px;">
+                ${new Date(cycle.startDate).toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}
+                &nbsp;→&nbsp;
+                ${new Date(cycle.endDate).toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}
+                &nbsp;·&nbsp; ${cycleDays} days
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;opacity:0.5;margin-bottom:4px;">Overall Completion</div>
+              <div style="font-size:3rem;font-weight:900;font-family:var(--font-mono);line-height:1;color:${completionPct>=100?'#68d391':completionPct>=75?'#f6e05e':'#fc8181'};">${completionPct.toFixed(1)}%</div>
+              <div style="font-size:0.75rem;opacity:0.65;margin-top:4px;">${totalSupplied.toLocaleString()}L supplied of ${totalOrdered.toLocaleString()}L ordered</div>
+            </div>
+          </div>
+
+          <!-- Big progress bar -->
+          <div style="margin-top:20px;">
+            <div style="height:16px;background:rgba(255,255,255,0.1);border-radius:999px;overflow:hidden;position:relative;">
+              <div style="position:absolute;top:0;left:0;height:100%;width:${completionPct}%;background:linear-gradient(90deg,#48bb78,#68d391);border-radius:999px;transition:width 1.4s;"></div>
+            </div>
+          </div>
+        </div>`;
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 2 — KEY NUMBERS (large, clear, labelled boxes)
+      // ══════════════════════════════════════════════════════════════════════
+      const kpiItems = [
+        { label: 'Total Orders',    value: totalOrders,                           unit: '',  color: '#1a3a5c', bg: '#eef4fb', border: '#c3d9f0' },
+        { label: 'Total Ordered',   value: totalOrdered.toLocaleString(),         unit: 'L', color: '#1a3a5c', bg: '#eef4fb', border: '#c3d9f0' },
+        { label: 'Total Supplied',  value: totalSupplied.toLocaleString(),         unit: 'L', color: '#276749', bg: '#f0fff4', border: '#9ae6b4' },
+        { label: 'Not Supplied',    value: (totalOrdered-totalSupplied).toLocaleString(), unit:'L', color:(totalOrdered-totalSupplied)>0?'#c53030':'#276749', bg:(totalOrdered-totalSupplied)>0?'#fff5f5':'#f0fff4', border:(totalOrdered-totalSupplied)>0?'#feb2b2':'#9ae6b4' },
+        { label: 'Closed Orders',   value: closedOrders,                          unit: '',  color: '#276749', bg: '#f0fff4', border: '#9ae6b4' },
+        { label: 'Carried Forward', value: openOrders,                            unit: '',  color: openOrders>0?'#744210':'#276749', bg: openOrders>0?'#fffbeb':'#f0fff4', border: openOrders>0?'#f6ad55':'#9ae6b4' },
+        { label: 'Technicians',     value: sortedTechs.length,                    unit: '',  color: '#553c9a', bg: '#faf5ff', border: '#d6bcfa' },
+        { label: 'Duration',        value: cycleDays,                             unit: ' days', color: '#0987a0', bg: '#e6fffa', border: '#81e6d9' },
+      ];
+      html += `
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">
+          ${kpiItems.map(k => `
+            <div style="background:${k.bg};border:1.5px solid ${k.border};border-radius:12px;padding:16px 14px;text-align:center;">
+              <div style="font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#667085;margin-bottom:8px;">${k.label}</div>
+              <div style="font-size:1.65rem;font-weight:900;font-family:var(--font-mono);color:${k.color};line-height:1;">${k.value}<span style="font-size:1rem;font-weight:600;">${k.unit}</span></div>
+            </div>`).join('')}
+        </div>`;
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 3 — TECHNICIAN PERFORMANCE TABLE (clear, readable, printable)
+      // ══════════════════════════════════════════════════════════════════════
+      html += `
+        <div style="background:white;border:1.5px solid #e2e8f0;border-radius:14px;margin-bottom:24px;overflow:hidden;">
+          <div style="background:#f8fafc;padding:16px 20px;border-bottom:1.5px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:1rem;font-weight:800;color:#1a202c;">🏆 Technician Performance</div>
+              <div style="font-size:0.72rem;color:#718096;margin-top:2px;">Allocated supply entries only · sorted by litres supplied</div>
+            </div>
+            <span style="background:#1a3a5c;color:white;padding:3px 12px;border-radius:999px;font-size:0.72rem;font-weight:600;">${sortedTechs.length} technician${sortedTechs.length!==1?'s':''}</span>
+          </div>`;
+
+      if (sortedTechs.length === 0) {
+        html += `<div style="padding:40px;text-align:center;color:#a0aec0;font-style:italic;">No supply data recorded for this cycle.</div>`;
+      } else {
+        html += `
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th style="padding:11px 16px;text-align:left;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">#</th>
+                <th style="padding:11px 16px;text-align:left;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Technician</th>
+                <th style="padding:11px 16px;text-align:right;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Allocated (L)</th>
+                <th style="padding:11px 16px;text-align:right;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Supplied (L)</th>
+                <th style="padding:11px 16px;text-align:right;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">% of Alloc</th>
+                <th style="padding:11px 16px;text-align:center;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Orders</th>
+                <th style="padding:11px 16px;text-align:center;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Days Active</th>
+                <th style="padding:11px 16px;text-align:left;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Progress</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+        sortedTechs.forEach(([tech, data], i) => {
+          const allocated = techTargets[tech] || 0;
+          const allocPct  = allocated > 0 ? Math.min(100, (data.supplied / allocated) * 100) : null;
+          const barColor  = barColors[i % barColors.length];
+          const isTop     = i === 0;
+          const rowBg     = isTop ? '#fffbeb' : i % 2 === 0 ? 'white' : '#fafafa';
+          html += `
+              <tr style="background:${rowBg};border-bottom:1px solid #e2e8f0;">
+                <td style="padding:12px 16px;font-weight:700;font-size:0.8rem;color:#94a3b8;">
+                  ${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}
+                </td>
+                <td style="padding:12px 16px;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:50%;background:${barColor}22;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.9rem;color:${barColor};flex-shrink:0;">${tech.charAt(0).toUpperCase()}</div>
+                    <span style="font-weight:700;font-size:0.9rem;color:#1a202c;">${tech}</span>
+                    ${isTop?'<span style="font-size:0.65rem;background:#fef3c7;color:#92400e;border-radius:999px;padding:1px 8px;font-weight:700;">TOP</span>':''}
+                  </div>
+                </td>
+                <td style="padding:12px 16px;text-align:right;font-family:var(--font-mono);font-size:0.88rem;color:#475569;font-weight:600;">${allocated>0?allocated.toLocaleString()+'L':'—'}</td>
+                <td style="padding:12px 16px;text-align:right;font-family:var(--font-mono);font-size:0.95rem;font-weight:800;color:${barColor};">${data.supplied.toLocaleString()}L</td>
+                <td style="padding:12px 16px;text-align:right;">
+                  ${allocPct !== null
+                    ? `<span style="font-size:0.85rem;font-weight:700;color:${allocPct>=100?'#276749':allocPct>=75?'#744210':'#c53030'};">${allocPct.toFixed(1)}%</span>`
+                    : '<span style="color:#a0aec0;">—</span>'}
+                </td>
+                <td style="padding:12px 16px;text-align:center;font-weight:700;color:#1a202c;">${data.orders.size}</td>
+                <td style="padding:12px 16px;text-align:center;font-weight:700;color:#1a202c;">${data.days.size}</td>
+                <td style="padding:12px 16px;min-width:120px;">
+                  <div style="height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;">
+                    <div style="height:100%;width:${(data.supplied/maxTechSupply)*100}%;background:${barColor};border-radius:999px;"></div>
+                  </div>
+                </td>
+              </tr>`;
+        });
+
+        // Totals row
+        const totalAllocated = Object.values(techTargets).reduce((s,v)=>s+v,0);
+        html += `
+              <tr style="background:#f1f5f9;border-top:2px solid #e2e8f0;">
+                <td style="padding:12px 16px;" colspan="2"><span style="font-weight:800;font-size:0.85rem;color:#1a202c;">TOTAL</span></td>
+                <td style="padding:12px 16px;text-align:right;font-family:var(--font-mono);font-weight:800;font-size:0.9rem;color:#1a202c;">${totalAllocated>0?totalAllocated.toLocaleString()+'L':'—'}</td>
+                <td style="padding:12px 16px;text-align:right;font-family:var(--font-mono);font-weight:800;font-size:0.9rem;color:#276749;">${totalSupplied.toLocaleString()}L</td>
+                <td style="padding:12px 16px;text-align:right;font-weight:800;color:#276749;">${completionPct.toFixed(1)}%</td>
+                <td colspan="3"></td>
+              </tr>`;
+
+        html += `</tbody></table>`;
+      }
+      html += `</div>`;
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 4 — CARRY-OVER ORDERS (if any)
+      // ══════════════════════════════════════════════════════════════════════
+      if (carryOvers.length > 0) {
+        html += `
+          <div style="background:white;border:2px solid #f6ad55;border-radius:14px;margin-bottom:24px;overflow:hidden;">
+            <div style="background:#fffbeb;padding:16px 20px;border-bottom:1.5px solid #f6ad55;display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div style="font-size:1rem;font-weight:800;color:#744210;">⏳ Orders Carried to Next Cycle</div>
+                <div style="font-size:0.72rem;color:#92400e;margin-top:2px;">These orders were still open when this cycle ended · ${carryBalance.toLocaleString()}L total outstanding</div>
+              </div>
+              <span style="background:#92400e;color:white;padding:3px 12px;border-radius:999px;font-size:0.72rem;font-weight:600;">${carryOvers.length} order${carryOvers.length!==1?'s':''}</span>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+              <thead>
+                <tr style="background:#fef3c7;">
+                  <th style="padding:10px 16px;text-align:left;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#92400e;border-bottom:1.5px solid #f6ad55;">Order No</th>
+                  <th style="padding:10px 16px;text-align:left;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#92400e;border-bottom:1.5px solid #f6ad55;">Vehicle</th>
+                  <th style="padding:10px 16px;text-align:left;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#92400e;border-bottom:1.5px solid #f6ad55;">Date</th>
+                  <th style="padding:10px 16px;text-align:right;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#92400e;border-bottom:1.5px solid #f6ad55;">Ordered (L)</th>
+                  <th style="padding:10px 16px;text-align:right;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#92400e;border-bottom:1.5px solid #f6ad55;">Supplied (L)</th>
+                  <th style="padding:10px 16px;text-align:right;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#92400e;border-bottom:1.5px solid #f6ad55;">Outstanding (L)</th>
+                  <th style="padding:10px 16px;text-align:left;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#92400e;border-bottom:1.5px solid #f6ad55;">Progress</th>
+                  <th style="padding:10px 16px;text-align:left;font-weight:700;font-size:0.7rem;letter-spacing:0.06em;text-transform:uppercase;color:#92400e;border-bottom:1.5px solid #f6ad55;">Technician(s)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${carryOvers.map((o, i) => {
+                  const bal = o.totalLiters - o.suppliedTotal;
+                  const pct = o.totalLiters > 0 ? Math.min(100,(o.suppliedTotal/o.totalLiters)*100) : 0;
+                  const techs = Object.keys(o.allocations||{}).join(', ') || '—';
+                  return `<tr style="border-bottom:1px solid #fde68a;background:${i%2===0?'white':'#fffbeb'};">
+                    <td style="padding:11px 16px;font-family:var(--font-mono);font-weight:700;color:#744210;">${o.orderNo}</td>
+                    <td style="padding:11px 16px;font-family:var(--font-mono);font-size:0.82rem;">${o.vehiclePlate||'—'}</td>
+                    <td style="padding:11px 16px;font-size:0.82rem;color:#718096;">${o.createdDate||'—'}</td>
+                    <td style="padding:11px 16px;text-align:right;font-family:var(--font-mono);font-weight:600;">${o.totalLiters.toLocaleString()}</td>
+                    <td style="padding:11px 16px;text-align:right;font-family:var(--font-mono);font-weight:600;color:#276749;">${o.suppliedTotal.toLocaleString()}</td>
+                    <td style="padding:11px 16px;text-align:right;font-family:var(--font-mono);font-weight:800;color:#c53030;">${bal.toLocaleString()}</td>
+                    <td style="padding:11px 16px;min-width:110px;">
+                      <div style="height:8px;background:#fde68a;border-radius:999px;overflow:hidden;margin-bottom:3px;">
+                        <div style="height:100%;width:${pct}%;background:#d97706;border-radius:999px;"></div>
+                      </div>
+                      <span style="font-size:0.65rem;color:#92400e;">${pct.toFixed(0)}% done</span>
+                    </td>
+                    <td style="padding:11px 16px;font-size:0.78rem;">${techs}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+              <tfoot>
+                <tr style="background:#fef3c7;border-top:2px solid #f6ad55;">
+                  <td colspan="3" style="padding:10px 16px;font-weight:800;font-size:0.82rem;color:#744210;">TOTAL OUTSTANDING</td>
+                  <td style="padding:10px 16px;text-align:right;font-family:var(--font-mono);font-weight:800;color:#744210;">${carryOvers.reduce((s,o)=>s+o.totalLiters,0).toLocaleString()}</td>
+                  <td style="padding:10px 16px;text-align:right;font-family:var(--font-mono);font-weight:800;color:#276749;">${carryOvers.reduce((s,o)=>s+o.suppliedTotal,0).toLocaleString()}</td>
+                  <td style="padding:10px 16px;text-align:right;font-family:var(--font-mono);font-weight:800;color:#c53030;">${carryBalance.toLocaleString()}</td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>`;
+      }
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 5 — ALL ORDERS TABLE (per region, full detail)
+      // ══════════════════════════════════════════════════════════════════════
+      Object.entries(cycle.regions).forEach(([rName, r]) => {
+        const rOrders = Object.values(r.orders)
+          .filter(o => Object.keys(o.allocations || {}).length > 0)
+          .sort((a,b) => (a.createdDate||'').localeCompare(b.createdDate||''));
+        if (rOrders.length === 0) return;
+
+        const rOrdered  = rOrders.reduce((s,o)=>s+o.totalLiters,0);
+        const rSupplied = rOrders.reduce((s,o)=>s+o.suppliedTotal,0);
+        const rClosed   = rOrders.filter(o=>(o.totalLiters-o.suppliedTotal)<=0).length;
+        const rCarried  = rOrders.filter(o=>(o.totalLiters-o.suppliedTotal)>0).length;
+
+        html += `
+          <div style="background:white;border:1.5px solid #e2e8f0;border-radius:14px;margin-bottom:20px;overflow:hidden;">
+            <div style="background:#f8fafc;padding:16px 20px;border-bottom:1.5px solid #e2e8f0;display:flex;align-items:center;flex-wrap:wrap;gap:10px;">
+              <div style="background:#1a3a5c;color:white;padding:5px 16px;border-radius:999px;font-weight:800;font-size:0.85rem;">${rName}</div>
+              <span style="background:#f0fff4;color:#276749;border:1px solid #9ae6b4;padding:3px 10px;border-radius:999px;font-size:0.75rem;font-weight:600;">✅ ${rClosed} Closed</span>
+              ${rCarried>0?`<span style="background:#fffbeb;color:#744210;border:1px solid #f6ad55;padding:3px 10px;border-radius:999px;font-size:0.75rem;font-weight:600;">⏳ ${rCarried} Carried</span>`:''}
+              <div style="margin-left:auto;text-align:right;">
+                <span style="font-size:0.8rem;font-weight:700;color:#276749;">${rSupplied.toLocaleString()}L supplied</span>
+                <span style="font-size:0.8rem;color:#94a3b8;"> / </span>
+                <span style="font-size:0.8rem;font-weight:700;color:#1a202c;">${rOrdered.toLocaleString()}L ordered</span>
+              </div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:0.84rem;">
+              <thead>
+                <tr style="background:#f1f5f9;">
+                  <th style="padding:10px 14px;text-align:left;font-weight:700;font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Order No</th>
+                  <th style="padding:10px 14px;text-align:left;font-weight:700;font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Vehicle</th>
+                  <th style="padding:10px 14px;text-align:left;font-weight:700;font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Date</th>
+                  <th style="padding:10px 14px;text-align:right;font-weight:700;font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Ordered (L)</th>
+                  <th style="padding:10px 14px;text-align:right;font-weight:700;font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Supplied (L)</th>
+                  <th style="padding:10px 14px;text-align:right;font-weight:700;font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Balance (L)</th>
+                  <th style="padding:10px 14px;text-align:center;font-weight:700;font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Status</th>
+                  <th style="padding:10px 14px;text-align:left;font-weight:700;font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Progress</th>
+                  <th style="padding:10px 14px;text-align:left;font-weight:700;font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;">Technician(s)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rOrders.map((o, i) => {
+                  const bal = o.totalLiters - o.suppliedTotal;
+                  const pct = o.totalLiters > 0 ? Math.min(100,(o.suppliedTotal/o.totalLiters)*100) : 0;
+                  const isClosed = bal <= 0;
+                  const techs = Object.keys(o.allocations||{}).join(', ') || '—';
+                  return `<tr style="border-bottom:1px solid #e2e8f0;background:${!isClosed?'#fffbeb':i%2===0?'white':'#fafafa'};">
+                    <td style="padding:11px 14px;">
+                      <span style="font-family:var(--font-mono);font-weight:700;font-size:0.88rem;color:#1a3a5c;">${o.orderNo}</span>
+                      ${!isClosed?`<span style="display:inline-block;font-size:0.58rem;background:#fef3c7;color:#92400e;border-radius:999px;padding:1px 6px;margin-left:5px;font-weight:700;">CARRIED</span>`:''}
+                    </td>
+                    <td style="padding:11px 14px;font-family:var(--font-mono);font-size:0.82rem;color:#475569;">${o.vehiclePlate||'—'}</td>
+                    <td style="padding:11px 14px;font-size:0.82rem;color:#718096;">${o.createdDate||'—'}</td>
+                    <td style="padding:11px 14px;text-align:right;font-family:var(--font-mono);font-weight:600;color:#475569;">${o.totalLiters.toLocaleString()}</td>
+                    <td style="padding:11px 14px;text-align:right;font-family:var(--font-mono);font-weight:700;color:#276749;">${o.suppliedTotal.toLocaleString()}</td>
+                    <td style="padding:11px 14px;text-align:right;font-family:var(--font-mono);font-weight:800;color:${isClosed?'#276749':'#c53030'};">${isClosed?'—':bal.toLocaleString()}</td>
+                    <td style="padding:11px 14px;text-align:center;">
+                      <span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:0.68rem;font-weight:700;
+                        background:${isClosed?'#f0fff4':'#fffbeb'};
+                        color:${isClosed?'#276749':'#744210'};
+                        border:1px solid ${isClosed?'#9ae6b4':'#f6ad55'};">
+                        ${isClosed?'✅ CLOSED':'⏳ OPEN'}
+                      </span>
+                    </td>
+                    <td style="padding:11px 14px;min-width:100px;">
+                      <div style="height:6px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-bottom:2px;">
+                        <div style="height:100%;width:${pct}%;background:${isClosed?'#48bb78':'#ed8936'};border-radius:999px;"></div>
+                      </div>
+                      <span style="font-size:0.62rem;color:#94a3b8;">${pct.toFixed(0)}%</span>
+                    </td>
+                    <td style="padding:11px 14px;font-size:0.78rem;color:#1a202c;">${techs}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+              <tfoot>
+                <tr style="background:#f1f5f9;border-top:2px solid #e2e8f0;">
+                  <td colspan="3" style="padding:10px 14px;font-weight:800;font-size:0.82rem;color:#1a202c;">REGION TOTAL</td>
+                  <td style="padding:10px 14px;text-align:right;font-family:var(--font-mono);font-weight:800;color:#1a202c;">${rOrdered.toLocaleString()}</td>
+                  <td style="padding:10px 14px;text-align:right;font-family:var(--font-mono);font-weight:800;color:#276749;">${rSupplied.toLocaleString()}</td>
+                  <td style="padding:10px 14px;text-align:right;font-family:var(--font-mono);font-weight:800;color:${(rOrdered-rSupplied)>0?'#c53030':'#276749'};">${(rOrdered-rSupplied)>0?(rOrdered-rSupplied).toLocaleString():'—'}</td>
+                  <td colspan="3"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>`;
+      });
+
+      document.getElementById('viewCycleContent').innerHTML = html;
+      openModal('viewCycleModal');
+    }
+
+    // ===== CYCLE EDITOR =====
+    function toggleCycleEditorFullscreen() {
+      const container = document.getElementById('cycleEditorContainer');
+      const icon      = document.getElementById('cycleEditorExpandIcon');
+      const overlay   = document.getElementById('cycleEditorModal');
+      if (!container) return;
+      const isFS = container.dataset.fullscreen === '1';
+      if (isFS) {
+        container.dataset.fullscreen = '0';
+        container.style.cssText = 'max-width:980px;width:96vw;max-height:94vh;overflow-y:auto;transition:all 0.3s ease;';
+        overlay.style.alignItems = '';
+        icon.className = 'fa-regular fa-expand';
+      } else {
+        container.dataset.fullscreen = '1';
+        container.style.cssText = 'max-width:100vw;width:100vw;max-height:100vh;height:100vh;border-radius:0;overflow-y:auto;transition:all 0.3s ease;';
+        overlay.style.alignItems = 'flex-start';
+        icon.className = 'fa-regular fa-compress';
+      }
+    }
+
+    function openCycleEditor(cycleIdx) {
+      const cycle = DB.cycles[cycleIdx];
+      if (!cycle) return showToast('Cycle not found', 'error');
+      window._editingCycleIdx = cycleIdx;
+
+      document.getElementById('cycleEditorTitle').textContent = `✏️ Editing: ${cycle.name}`;
+      document.getElementById('cycleEditorSubtitle').textContent = '⚠️ Changes here are permanent and affect archived data. Edit carefully.';
 
       let html = '';
 
+      // ── CYCLE META ────────────────────────────────────────────────────────
+      html += `
+        <div style="background:white;border:1px solid var(--neutral-200);border-radius:var(--radius-xl);padding:var(--space-5);margin-bottom:var(--space-4);">
+          <div style="font-weight:700;font-size:0.95rem;margin-bottom:var(--space-4);display:flex;align-items:center;gap:8px;">
+            <i class="fa-regular fa-circle-info" style="color:var(--accent-600);"></i> Cycle Information
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-4);">
+            <div>
+              <label style="font-size:0.75rem;font-weight:600;color:var(--neutral-600);display:block;margin-bottom:4px;">Cycle Name</label>
+              <input type="text" id="cycleEdit_name" value="${cycle.name}" class="input-field" style="font-weight:700;font-size:0.95rem;text-transform:uppercase;">
+            </div>
+            <div>
+              <label style="font-size:0.75rem;font-weight:600;color:var(--neutral-600);display:block;margin-bottom:4px;">Start Date</label>
+              <input type="date" id="cycleEdit_startDate" value="${cycle.startDate}" class="input-field">
+            </div>
+            <div>
+              <label style="font-size:0.75rem;font-weight:600;color:var(--neutral-600);display:block;margin-bottom:4px;">End Date</label>
+              <input type="date" id="cycleEdit_endDate" value="${cycle.endDate}" class="input-field">
+            </div>
+          </div>
+        </div>`;
+
+      // ── PER-REGION ORDER EDITOR ───────────────────────────────────────────
       Object.entries(cycle.regions).forEach(([rName, r]) => {
-        const allOrders = Object.values(r.orders);
-        if (allOrders.length === 0 && Object.keys(r.dailyLog).length === 0) return;
+        const assignedOrders = Object.values(r.orders).filter(o => Object.keys(o.allocations || {}).length > 0);
+        if (assignedOrders.length === 0) return;
+        assignedOrders.sort((a,b) => (a.createdDate||'').localeCompare(b.createdDate||''));
 
-        const totalSupplied = allOrders.reduce((s,o) => s + o.suppliedTotal, 0);
-        const totalOrdered = allOrders.reduce((s,o) => s + o.totalLiters, 0);
-
-        const techTotals = {};
-        Object.values(r.dailyLog).forEach(entries => entries.forEach(e => {
-          if (!e.unallocated) techTotals[e.technician] = (techTotals[e.technician]||0) + e.supplied;
-        }));
-        const sortedTechs = Object.entries(techTotals).sort((a,b) => b[1]-a[1]);
+        const regionTechs = [...new Set(assignedOrders.flatMap(o => Object.keys(o.allocations||{})))].sort();
 
         html += `
-          <div class="mb-6">
-            <div class="flex items-center gap-2 mb-3">
-              <div style="background:var(--primary-800);color:white;padding:4px 12px;border-radius:999px;font-weight:700;font-size:0.85rem;">${rName}</div>
-              <span class="text-sm text-neutral-500">${allOrders.length} orders · ${totalSupplied.toLocaleString()}L / ${totalOrdered.toLocaleString()}L</span>
+          <div style="background:white;border:1px solid var(--neutral-200);border-radius:var(--radius-xl);padding:var(--space-5);margin-bottom:var(--space-4);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--space-4);">
+              <div style="background:var(--primary-800);color:white;padding:4px 14px;border-radius:999px;font-weight:700;font-size:0.85rem;">${rName}</div>
+              <span style="font-size:0.78rem;color:var(--neutral-500);">${assignedOrders.length} assigned orders</span>
+              <button onclick="cycleEditorAddOrder('${rName}')" class="btn btn-secondary btn-sm" style="margin-left:auto;">
+                <i class="fa-regular fa-plus"></i> Add Order
+              </button>
             </div>
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:0.8rem;" id="cycleOrderTable_${rName.replace(/\s/g,'_')}">
+                <thead>
+                  <tr style="background:var(--neutral-50);border-bottom:2px solid var(--neutral-200);">
+                    <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">Order No</th>
+                    <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">Vehicle</th>
+                    <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">Date</th>
+                    <th style="padding:8px 10px;text-align:right;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">Ordered (L)</th>
+                    <th style="padding:8px 10px;text-align:right;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">Supplied (L)</th>
+                    <th style="padding:8px 10px;text-align:right;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">Balance</th>
+                    <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;">Technicians</th>
+                    <th style="padding:8px 10px;text-align:center;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>`;
 
-            ${allOrders.length > 0 ? `
-            <div class="table-container mb-3">
-              <table class="table">
-                <thead><tr>
-                  <th>Order No</th><th>Vehicle</th><th>Total</th><th>Supplied</th><th>Balance</th><th>Status</th><th>Technicians</th>
-                </tr></thead>
-                <tbody>
-                  ${allOrders.map(o => {
-                    const bal = o.totalLiters - o.suppliedTotal;
-                    const techs = Object.keys(o.allocations||{}).join(', ') || '—';
-                    return `<tr>
-                      <td class="font-mono font-semibold">${o.orderNo}</td>
-                      <td>${o.vehiclePlate||'—'}</td>
-                      <td class="font-mono">${o.totalLiters}L</td>
-                      <td class="font-mono">${o.suppliedTotal}L</td>
-                      <td class="font-mono ${bal>0?'text-warning-700':'text-success-700'}">${bal}L</td>
-                      <td><span class="badge ${o.status==='OPEN'?'badge-warning':'badge-success'}">${o.status||'OPEN'}</span></td>
-                      <td class="text-xs">${techs}</td>
-                    </tr>`;
-                  }).join('')}
+        assignedOrders.forEach((o, rowIdx) => {
+          const bal  = o.totalLiters - o.suppliedTotal;
+          const isClosed = bal <= 0;
+          const techList = Object.keys(o.allocations||{}).join(', ');
+          const safeRegion = rName.replace(/\s/g,'_');
+          const rowId = `cerow_${safeRegion}_${rowIdx}`;
+
+          html += `
+                  <tr id="${rowId}" style="border-bottom:1px solid var(--neutral-100);" data-orderkey="${o.orderNo}" data-region="${rName}">
+                    <td style="padding:6px 8px;">
+                      <input type="text" class="ce-input" value="${o.orderNo}" data-field="orderNo" data-row="${rowId}"
+                        style="width:110px;padding:4px 7px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:0.8rem;font-weight:600;">
+                    </td>
+                    <td style="padding:6px 8px;">
+                      <input type="text" class="ce-input" value="${o.vehiclePlate||''}" data-field="vehiclePlate" data-row="${rowId}"
+                        style="width:100px;padding:4px 7px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:0.8rem;text-transform:uppercase;">
+                    </td>
+                    <td style="padding:6px 8px;">
+                      <input type="date" class="ce-input" value="${o.createdDate||''}" data-field="createdDate" data-row="${rowId}"
+                        style="width:130px;padding:4px 7px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-size:0.78rem;">
+                    </td>
+                    <td style="padding:6px 8px;text-align:right;">
+                      <input type="number" class="ce-input" value="${o.totalLiters}" data-field="totalLiters" data-row="${rowId}" min="0" step="0.1"
+                        style="width:90px;padding:4px 7px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:0.8rem;text-align:right;"
+                        oninput="cycleEditorUpdateBalance('${rowId}')">
+                    </td>
+                    <td style="padding:6px 8px;text-align:right;">
+                      <input type="number" class="ce-input" value="${o.suppliedTotal}" data-field="suppliedTotal" data-row="${rowId}" min="0" step="0.1"
+                        style="width:90px;padding:4px 7px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:0.8rem;text-align:right;"
+                        oninput="cycleEditorUpdateBalance('${rowId}')">
+                    </td>
+                    <td style="padding:6px 8px;text-align:right;">
+                      <span id="${rowId}_balance" style="font-family:var(--font-mono);font-size:0.8rem;font-weight:700;color:${isClosed?'var(--status-success)':'var(--status-warning)'};">
+                        ${isClosed?'✓':bal.toFixed(1)+'L'}
+                      </span>
+                    </td>
+                    <td style="padding:6px 8px;">
+                      <input type="text" class="ce-input" value="${techList}" data-field="allocations" data-row="${rowId}"
+                        placeholder="Tech1, Tech2"
+                        style="width:160px;padding:4px 7px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-size:0.78rem;"
+                        title="Comma-separated technician names">
+                    </td>
+                    <td style="padding:6px 8px;text-align:center;">
+                      <button onclick="cycleEditorDeleteRow('${rowId}')" title="Delete order"
+                        style="width:28px;height:28px;border-radius:var(--radius-sm);border:1px solid var(--status-danger);background:var(--status-danger-bg);color:var(--status-danger);cursor:pointer;font-size:0.75rem;">
+                        <i class="fa-regular fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>`;
+        });
+
+        html += `
                 </tbody>
               </table>
-            </div>` : ''}
-
-            ${sortedTechs.length > 0 ? `
-            <div class="card" style="background:var(--neutral-50);">
-              <div class="font-semibold text-sm mb-3">Technician Performance</div>
-              ${sortedTechs.map(([tech, litres], i) => {
-                const pct = (litres / sortedTechs[0][1]) * 100;
-                return `<div class="flex items-center gap-3 mb-2">
-                  <span class="text-xs font-mono w-5 text-neutral-400">#${i+1}</span>
-                  ${techAvatarHtml(tech, 'style="width:28px;height:28px;font-size:0.75rem;"')}
-                  <div style="flex:1;">
-                    <div class="flex justify-between mb-1">
-                      <span class="text-sm font-semibold">${tech}</span>
-                      <span class="font-mono text-sm font-bold">${litres.toLocaleString()}L</span>
-                    </div>
-                    <div class="progress-bar" style="height:6px;"><div class="progress-fill success" style="width:${pct}%;"></div></div>
-                  </div>
-                </div>`;
-              }).join('')}
-            </div>` : ''}
-          </div>
-        `;
+            </div>
+          </div>`;
       });
 
-      // Daily log summary
-      let allLogEntries = [];
+      // ── DAILY LOG EDITOR ─────────────────────────────────────────────────
+      let allEntries = [];
       Object.entries(cycle.regions).forEach(([rName, r]) => {
         Object.entries(r.dailyLog).forEach(([date, entries]) => {
-          entries.forEach(e => allLogEntries.push({...e, date, region: rName}));
+          entries.forEach((e, eIdx) => {
+            if (!e.unallocated) allEntries.push({ ...e, date, region: rName, _eIdx: eIdx });
+          });
         });
       });
-      allLogEntries.sort((a,b) => b.date.localeCompare(a.date));
+      allEntries.sort((a,b) => b.date.localeCompare(a.date));
 
-      if (allLogEntries.length > 0) {
+      if (allEntries.length > 0) {
         html += `
-          <div class="mb-4">
-            <h4 class="font-semibold mb-3">📅 Daily Log (${allLogEntries.length} entries)</h4>
-            <div class="table-container" style="max-height:320px;overflow-y:auto;">
-              <table class="table">
-                <thead><tr><th>Date</th><th>Region</th><th>Technician</th><th>Order</th><th>Supplied</th><th>Type</th></tr></thead>
-                <tbody>
-                  ${allLogEntries.map(e => `<tr>
-                    <td>${new Date(e.date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</td>
-                    <td class="text-xs">${e.region}</td>
-                    <td>${e.technician}</td>
-                    <td class="font-mono text-xs">${e.orderNo||'—'}</td>
-                    <td class="font-mono font-semibold">${e.supplied}L</td>
-                    <td><span class="badge ${e.unallocated?'badge-warning':'badge-success'}">${e.unallocated?'Unalloc':'Allocated'}</span></td>
-                  </tr>`).join('')}
-                </tbody>
-              </table>
+          <div style="background:white;border:1px solid var(--neutral-200);border-radius:var(--radius-xl);padding:var(--space-5);margin-bottom:var(--space-4);">
+            <div style="font-weight:700;font-size:0.95rem;margin-bottom:var(--space-4);display:flex;align-items:center;gap:8px;">
+              <i class="fa-regular fa-calendar-days" style="color:var(--status-info);"></i>
+              Daily Log Entries
+              <span style="background:var(--neutral-200);padding:2px 8px;border-radius:999px;font-size:0.72rem;font-weight:600;margin-left:4px;">${allEntries.length} entries</span>
+              <span style="font-size:0.72rem;color:var(--neutral-500);font-weight:400;margin-left:4px;">Allocated only · edit supplied amounts and dates</span>
             </div>
-          </div>
-        `;
+            <div style="overflow-x:auto;max-height:380px;overflow-y:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:0.8rem;" id="cycleDailyLogTable">
+                <thead style="position:sticky;top:0;z-index:2;">
+                  <tr style="background:var(--neutral-50);border-bottom:2px solid var(--neutral-200);">
+                    <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;">Date</th>
+                    <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;">Technician</th>
+                    <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;">Order No</th>
+                    <th style="padding:8px 10px;text-align:right;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;">Supplied (L)</th>
+                    <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;">Region</th>
+                    <th style="padding:8px 10px;text-align:center;font-weight:600;color:var(--neutral-600);font-size:0.72rem;text-transform:uppercase;">Del</th>
+                  </tr>
+                </thead>
+                <tbody>`;
+
+        allEntries.forEach((e, i) => {
+          const logRowId = `celog_${i}`;
+          html += `
+                  <tr id="${logRowId}" style="border-bottom:1px solid var(--neutral-100);"
+                      data-region="${e.region}" data-date="${e.date}" data-eidx="${e._eIdx}">
+                    <td style="padding:5px 8px;">
+                      <input type="date" class="ce-log-input" value="${e.date}" data-field="date" data-logrow="${logRowId}"
+                        style="width:130px;padding:3px 6px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-size:0.77rem;">
+                    </td>
+                    <td style="padding:5px 8px;">
+                      <input type="text" class="ce-log-input" value="${e.technician||''}" data-field="technician" data-logrow="${logRowId}"
+                        style="width:130px;padding:3px 6px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-size:0.77rem;">
+                    </td>
+                    <td style="padding:5px 8px;">
+                      <input type="text" class="ce-log-input" value="${e.orderNo||''}" data-field="orderNo" data-logrow="${logRowId}"
+                        style="width:110px;padding:3px 6px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:0.77rem;">
+                    </td>
+                    <td style="padding:5px 8px;text-align:right;">
+                      <input type="number" class="ce-log-input" value="${e.supplied}" data-field="supplied" data-logrow="${logRowId}" min="0" step="0.1"
+                        style="width:80px;padding:3px 6px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:0.77rem;text-align:right;">
+                    </td>
+                    <td style="padding:5px 8px;font-size:0.75rem;color:var(--neutral-500);">${e.region}</td>
+                    <td style="padding:5px 8px;text-align:center;">
+                      <button onclick="cycleEditorDeleteLogRow('${logRowId}')" title="Delete entry"
+                        style="width:26px;height:26px;border-radius:var(--radius-sm);border:1px solid var(--status-danger);background:var(--status-danger-bg);color:var(--status-danger);cursor:pointer;font-size:0.7rem;">
+                        <i class="fa-regular fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>`;
+        });
+
+        html += `</tbody></table></div></div>`;
       }
 
-      document.getElementById('viewCycleContent').innerHTML = html || '<p class="text-neutral-400 text-center py-6">No data recorded for this cycle.</p>';
-      openModal('viewCycleModal');
+      document.getElementById('cycleEditorContent').innerHTML = html;
+      openModal('cycleEditorModal');
+    }
+
+    function cycleEditorUpdateBalance(rowId) {
+      const ordered  = parseFloat(document.querySelector(`[data-row="${rowId}"][data-field="totalLiters"]`)?.value) || 0;
+      const supplied = parseFloat(document.querySelector(`[data-row="${rowId}"][data-field="suppliedTotal"]`)?.value) || 0;
+      const bal = ordered - supplied;
+      const el = document.getElementById(`${rowId}_balance`);
+      if (el) {
+        el.textContent    = bal <= 0 ? '✓' : bal.toFixed(1) + 'L';
+        el.style.color    = bal <= 0 ? 'var(--status-success)' : 'var(--status-warning)';
+      }
+    }
+
+    function cycleEditorDeleteRow(rowId) {
+      const row = document.getElementById(rowId);
+      if (!row) return;
+      if (!confirm(`Delete order "${row.dataset.orderkey}" from this cycle archive?`)) return;
+      row.style.transition = 'opacity 0.25s';
+      row.style.opacity = '0';
+      setTimeout(() => row.remove(), 260);
+    }
+
+    function cycleEditorDeleteLogRow(logRowId) {
+      const row = document.getElementById(logRowId);
+      if (!row) return;
+      if (!confirm('Delete this log entry from the cycle archive?')) return;
+      row.style.transition = 'opacity 0.25s';
+      row.style.opacity = '0';
+      setTimeout(() => row.remove(), 260);
+    }
+
+    function cycleEditorAddOrder(regionName) {
+      const safeRegion = regionName.replace(/\s/g,'_');
+      const tbody = document.querySelector(`#cycleOrderTable_${safeRegion} tbody`);
+      if (!tbody) return;
+      const rowIdx = tbody.querySelectorAll('tr').length;
+      const rowId = `cerow_${safeRegion}_new_${rowIdx}`;
+      const tr = document.createElement('tr');
+      tr.id = rowId;
+      tr.dataset.region = regionName;
+      tr.dataset.orderkey = '';
+      tr.style.borderBottom = '1px solid var(--neutral-100)';
+      tr.style.background = 'rgba(37,99,235,0.04)';
+      tr.innerHTML = `
+        <td style="padding:6px 8px;"><input type="text" class="ce-input" value="" data-field="orderNo" data-row="${rowId}" placeholder="Order No" style="width:110px;padding:4px 7px;border:1px solid var(--status-info);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:0.8rem;font-weight:600;"></td>
+        <td style="padding:6px 8px;"><input type="text" class="ce-input" value="" data-field="vehiclePlate" data-row="${rowId}" placeholder="Plate" style="width:100px;padding:4px 7px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:0.8rem;text-transform:uppercase;"></td>
+        <td style="padding:6px 8px;"><input type="date" class="ce-input" value="" data-field="createdDate" data-row="${rowId}" style="width:130px;padding:4px 7px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-size:0.78rem;"></td>
+        <td style="padding:6px 8px;text-align:right;"><input type="number" class="ce-input" value="0" data-field="totalLiters" data-row="${rowId}" min="0" step="0.1" style="width:90px;padding:4px 7px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:0.8rem;text-align:right;" oninput="cycleEditorUpdateBalance('${rowId}')"></td>
+        <td style="padding:6px 8px;text-align:right;"><input type="number" class="ce-input" value="0" data-field="suppliedTotal" data-row="${rowId}" min="0" step="0.1" style="width:90px;padding:4px 7px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:0.8rem;text-align:right;" oninput="cycleEditorUpdateBalance('${rowId}')"></td>
+        <td style="padding:6px 8px;text-align:right;"><span id="${rowId}_balance" style="font-family:var(--font-mono);font-size:0.8rem;font-weight:700;color:var(--status-warning);">0L</span></td>
+        <td style="padding:6px 8px;"><input type="text" class="ce-input" value="" data-field="allocations" data-row="${rowId}" placeholder="Tech1, Tech2" style="width:160px;padding:4px 7px;border:1px solid var(--neutral-200);border-radius:var(--radius-sm);font-size:0.78rem;" title="Comma-separated technician names"></td>
+        <td style="padding:6px 8px;text-align:center;">
+          <button onclick="cycleEditorDeleteRow('${rowId}')" style="width:28px;height:28px;border-radius:var(--radius-sm);border:1px solid var(--status-danger);background:var(--status-danger-bg);color:var(--status-danger);cursor:pointer;font-size:0.75rem;"><i class="fa-regular fa-trash"></i></button>
+        </td>`;
+      tbody.appendChild(tr);
+      tr.querySelector('input').focus();
+    }
+
+    function saveCycleEdits() {
+      const cycleIdx = window._editingCycleIdx;
+      if (cycleIdx === undefined || cycleIdx === null) return;
+      const cycle = DB.cycles[cycleIdx];
+      if (!cycle) return showToast('Cycle not found', 'error');
+
+      // ── 1. Save cycle meta ──────────────────────────────────────────────
+      const newName      = document.getElementById('cycleEdit_name')?.value.trim().toUpperCase();
+      const newStartDate = document.getElementById('cycleEdit_startDate')?.value;
+      const newEndDate   = document.getElementById('cycleEdit_endDate')?.value;
+      if (newName)      cycle.name      = newName;
+      if (newStartDate) cycle.startDate = newStartDate;
+      if (newEndDate)   cycle.endDate   = newEndDate;
+
+      // ── 2. Save order rows ───────────────────────────────────────────────
+      // Rebuild each region's orders from the table rows still present in DOM
+      Object.keys(cycle.regions).forEach(rName => {
+        cycle.regions[rName].orders = {};
+      });
+
+      document.querySelectorAll('[id^="cerow_"]').forEach(row => {
+        const rName = row.dataset.region;
+        if (!rName || !cycle.regions[rName]) return;
+
+        const get = (field) => row.querySelector(`[data-field="${field}"]`)?.value?.trim() || '';
+        const orderNo      = get('orderNo');
+        const vehiclePlate = get('vehiclePlate').toUpperCase();
+        const createdDate  = get('createdDate');
+        const totalLiters  = parseFloat(get('totalLiters')) || 0;
+        const suppliedTotal= parseFloat(get('suppliedTotal')) || 0;
+        const techStr      = get('allocations');
+
+        if (!orderNo) return; // skip blank rows
+
+        const allocations = {};
+        techStr.split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
+          allocations[t] = totalLiters; // store alloc = total ordered
+        });
+
+        cycle.regions[rName].orders[orderNo] = {
+          orderNo, vehiclePlate, totalLiters, suppliedTotal,
+          allocations,
+          status: (totalLiters - suppliedTotal) <= 0 ? 'CLOSED' : 'OPEN',
+          createdDate
+        };
+      });
+
+      // ── 3. Save daily log rows ──────────────────────────────────────────
+      // Rebuild each region's dailyLog from table rows still present
+      Object.keys(cycle.regions).forEach(rName => {
+        cycle.regions[rName].dailyLog = {};
+      });
+
+      document.querySelectorAll('[id^="celog_"]').forEach(row => {
+        const rName = row.dataset.region;
+        if (!rName || !cycle.regions[rName]) return;
+
+        const get = (field) => row.querySelector(`[data-field="${field}"]`)?.value?.trim() || '';
+        const date       = get('date');
+        const technician = get('technician');
+        const orderNo    = get('orderNo');
+        const supplied   = parseFloat(get('supplied')) || 0;
+
+        if (!date || !technician || supplied <= 0) return;
+
+        if (!cycle.regions[rName].dailyLog[date]) cycle.regions[rName].dailyLog[date] = [];
+        cycle.regions[rName].dailyLog[date].push({ technician, orderNo, supplied, unallocated: false });
+      });
+
+      save();
+      closeModal('cycleEditorModal');
+      showToast(`✅ Cycle "${cycle.name}" saved`, 'success');
+      // Refresh the view summary if still open
+      if (document.getElementById('viewCycleModal')?.classList.contains('active')) {
+        viewCycleDetails(cycleIdx);
+      }
+      // Refresh cycles page
+      if (currentPage === 'cycles') renderPageWithTransition('cycles');
     }
 
     function exportCycleData(cycleIdx) {
@@ -8115,6 +9180,20 @@ Example:
       updateSystemClock();
       setInterval(updateSystemClock, 1000);
       setInterval(updateRegionFooter, 3000);
+
+      // Schedule daily alert refresh at midnight
+      function scheduleMidnightAlertReset() {
+        const now = new Date();
+        const midnight = new Date(now);
+        midnight.setHours(24, 0, 0, 0);
+        const msUntilMidnight = midnight - now;
+        setTimeout(() => {
+          _alertsShown.clear();
+          renderNotifications();
+          scheduleMidnightAlertReset(); // reschedule for next midnight
+        }, msUntilMidnight);
+      }
+      scheduleMidnightAlertReset();
     }
 
     // ===== SWIPE NAVIGATION =====
@@ -8274,8 +9353,18 @@ Example:
       const watchedHits = {}; // watchedName → [messages]
 
       // Watched persons scan — search ALL messages by sender name (partial match)
+      // Only include messages posted within the last 3 days (< 3 days from today)
       const watched = (DB.automation.watchedPersons || []).map(p => p.trim().toLowerCase()).filter(Boolean);
+      const nowMs = Date.now();
+      const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
       messages.forEach(msg => {
+        // Convert msg.date (DD/MM/YYYY) to a comparable date
+        const parts = msg.date.split('/');
+        if (parts.length === 3) {
+          const msgDate = new Date(`${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}T${msg.time}:00`);
+          const msgAge = nowMs - msgDate.getTime();
+          if (msgAge > threeDaysMs) return; // skip — older than 3 days
+        }
         const senderLower = msg.sender.toLowerCase();
         watched.forEach(w => {
           if (senderLower.includes(w)) {
@@ -8934,7 +10023,85 @@ Example:
       showToast('Watch list saved!', 'success');
     }
 
-    // ---- NOTIFICATION HELPER ----
+    // ---- SMART ALERTS ----
+    // Tracks which alert keys have already been shown in this session
+    const _alertsShown = new Set();
+
+    function runSmartAlerts() {
+      if (typeof _notifData === 'undefined') return;
+      const today = new Date().toISOString().slice(0, 10);
+      const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+
+      Object.entries(DB.regions).forEach(([rName, region]) => {
+
+        // ── ALERT 1: Open orders inactive for more than 2 days ──────────
+        Object.values(region.orders).forEach(order => {
+          if (order.status === 'CLOSED') return;
+          const balance = order.totalLiters - order.suppliedTotal;
+          if (balance <= 0) return; // effectively closed
+
+          // Find the most recent supply date for this order
+          let lastSupplyDate = order.createdDate || null;
+          Object.entries(region.dailyLog).forEach(([date, entries]) => {
+            entries.forEach(e => {
+              if (e.orderNo === order.orderNo && date > lastSupplyDate) {
+                lastSupplyDate = date;
+              }
+            });
+          });
+
+          if (lastSupplyDate && lastSupplyDate < twoDaysAgo) {
+            const alertKey = `inactive_order_${rName}_${order.orderNo}_${today}`;
+            if (!_alertsShown.has(alertKey)) {
+              _alertsShown.add(alertKey);
+              const daysSince = Math.round((Date.now() - new Date(lastSupplyDate).getTime()) / 86400000);
+              addSystemNotification(
+                `⚠️ Inactive Order: ${order.orderNo}`,
+                `No supply activity for ${daysSince} day${daysSince !== 1 ? 's' : ''} · ${rName} · Balance: ${balance}L`,
+                'var(--status-warning-bg)',
+                '⏰'
+              );
+            }
+          }
+        });
+
+        // ── ALERT 2: Technicians with no supply today ─────────────────────
+        if (region.technicians.length === 0) return;
+        const todayEntries = region.dailyLog[today] || [];
+        const techsActiveToday = new Set(todayEntries.map(e => e.technician));
+
+        // Only fire if there IS some activity today in this region (so we don't spam on days before anyone starts)
+        // OR if there are open orders assigned to technicians
+        const hasOpenOrders = Object.values(region.orders).some(o =>
+          o.status !== 'CLOSED' && (o.totalLiters - o.suppliedTotal) > 0 && Object.keys(o.allocations || {}).length > 0
+        );
+
+        if (hasOpenOrders) {
+          region.technicians.forEach(tech => {
+            // Only flag techs who have an open order allocated to them
+            const hasOpenAllocation = Object.values(region.orders).some(o =>
+              o.status !== 'CLOSED' && (o.totalLiters - o.suppliedTotal) > 0 && (o.allocations || {})[tech]
+            );
+            if (!hasOpenAllocation) return;
+
+            if (!techsActiveToday.has(tech)) {
+              const alertKey = `idle_tech_${rName}_${tech}_${today}`;
+              if (!_alertsShown.has(alertKey)) {
+                _alertsShown.add(alertKey);
+                addSystemNotification(
+                  `🔔 No Supply Today: ${tech}`,
+                  `${tech} has not recorded any supply for today (${today}) · ${rName}`,
+                  'var(--status-info-bg)',
+                  '📋'
+                );
+              }
+            }
+          });
+        }
+      });
+    }
+
+
     function addSystemNotification(title, desc, bg, icon) {
       if (typeof _notifData === 'undefined') return;
       _notifData.unshift({ title, desc, bg: bg || 'var(--status-info-bg)', icon: icon || 'ℹ️', action: null });
