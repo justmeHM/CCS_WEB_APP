@@ -11268,13 +11268,19 @@ Example:
     function autoLog(msg, type) {
       const color = type === 'error' ? '#dc2626' : type === 'warn' ? '#d97706' : type === 'ok' ? '#16a34a' : 'inherit';
       _autoLogLines.push(`<span style="color:${color};">${escHtml(msg)}</span>`);
-      autoRefreshLog();
+      // Throttle DOM updates — only refresh if no pending frame
+      if (!autoLog._pending) {
+        autoLog._pending = true;
+        requestAnimationFrame(() => { autoLog._pending = false; autoRefreshLog(); });
+      }
     }
 
     function autoRefreshLog() {
       const el = document.getElementById('autoLog');
       if (!el) return;
-      el.innerHTML = _autoLogLines.length ? _autoLogLines.join('<br>') : '<span style="color:var(--neutral-400);">Ready. Load a .txt file and press Parse.</span>';
+      // Only render last 300 lines to avoid huge innerHTML
+      const lines = _autoLogLines.length > 300 ? _autoLogLines.slice(-300) : _autoLogLines;
+      el.innerHTML = lines.length ? lines.join('<br>') : '<span style="color:var(--neutral-400);">Ready. Load a .txt file and press Parse.</span>';
       el.scrollTop = el.scrollHeight;
     }
 
@@ -11368,16 +11374,16 @@ Example:
         'NAME OF TECHNICIAN': ['technician']
       },
       'NRW': {
-        'CURRENT DG RUN HOURS':  ['rt','run time','gd run time','dg run time','dg rt','runtime','runTime','run'],
-        'PREVIOUS DG RUN HOURS': ['previous rt','previous run time','previous gd rt','previous gd run time'],
-        'FUEL FOUND':  ['found','fuel found','initial fuel level','initial dp','intial dp','initial'],
+        'CURRENT DG RUN HOURS':  ['gd run time','dg run time','dg rt','run time','runtime','runTime','rt'],
+        'PREVIOUS DG RUN HOURS': ['previous gd run time','previous gd rt','previous run time','previous rt','pre rt'],
+        'FUEL FOUND':  ['initial fuel level','initial dp','intial dp','fuel found','found','initial'],
         'FUEL ADDED':  ['added fuel','fuel added','added','uplifted'],
-        'SITE ID':     ['nrw','site id','site id','site i\'d','site i\'d:','code'],
-        'SITE NAME':   ['site name'],
-        'SUPPLIER':    ['fuel source','source','puma fuel','puma(ccs','meru fuel'],
+        'SITE ID':     ['site id','site i\'d','site i\'d:','nrw','code'],
+        'SITE NAME':   ['site name','site :'],
+        'SUPPLIER':    ['fuel source','source','puma(ccs fuel)','puma fuel','meru fuel'],
         'DATE':        ['date'],
-        'CPH':         ['cph','cph','cph'],
-        'NAME OF TECHNICIAN': ['technician']
+        'CPH':         ['cph'],
+        'NAME OF TECHNICIAN': ['name of technician','technician name','technician']
       },
       'Eastern': {
         'CURRENT DG RUN HOURS':  ['run time','runtime','runt','run _time','runtime','rt','run'],
@@ -11397,7 +11403,11 @@ Example:
     // CORE PARSER — faithful JS port of UniversalParser._split_blocks
     //               + UniversalParser._parse_block
     // ============================================================
+    // Global skipped-entries log — reset on each parse run
+    let _skippedLog = []; // [{reason, block, date, siteId}]
+
     function fuelChatParse(rawText, regionName) {
+      _skippedLog = []; // reset
       const cfg    = REGION_CONFIGS[regionName] || REGION_CONFIGS['New CCS'];
       const prefix = cfg.prefix;
       const varMap = REGION_VARIATION_MAPS[regionName] || REGION_VARIATION_MAPS['New CCS'];
@@ -11410,19 +11420,33 @@ Example:
       const waHeaderRe = /(\d{1,2}\/\d{1,2}\/\d{2,4}),\s*\d{1,2}:\d{2}/;
 
       // Split so that each segment STARTS with a WA timestamp line
+      // CRITICAL: require the timestamp to start at a line boundary (^) so the
+      // lookahead never fires mid-number. E.g. "22/03/2026" must NOT be split
+      // at the second "2" leaving "2/03/2026". The 'm' flag makes ^ match \n.
       const rawSegments = rawText
         .replace(/\r\n/g,'\n').replace(/\r/g,'\n')
-        .split(/(?=(?:\[)?\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2})/);
+        .split(/(?=(?:^|\n)(?:\[)?\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2})/m);
 
       autoLog(`📨 ${rawSegments.length} raw WA segments`);
 
-      // Extract the WA post date from the first line of a segment
+      // Extract the WA post date from the WA header line of a segment.
+      // We require the full timestamp format: DD/MM/YYYY, HH:MM - Sender:
+      // This prevents accidentally picking up a technician's written date
+      // (e.g. "21/03/26") as the WA timestamp.
       const waDateFromSeg = seg => {
-        const m = seg.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+        // Match a complete WA header: digits/digits/4-digit-year, HH:MM
+        const m = seg.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),\s*\d{1,2}:\d{2}/);
         if (!m) return null;
-        let yr = m[3]; if (yr.length===2) yr='20'+yr;
-        // returns YYYY-MM-DD so we can drift-check later
-        return `${yr}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+        return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+      };
+
+      // Extract the WA sender name from the first line of a segment
+      // Format: "DD/MM/YYYY, HH:MM - Sender Name: message"
+      const waSenderFromSeg = seg => {
+        const m = seg.match(/\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2}\s*-\s*([^:]+):/);
+        if (!m) return '';
+        // Clean up tildes (~) and emoji used in WA group display names
+        return m[1].trim().replace(/^[~\s]+/, '').replace(/\s+$/, '');
       };
 
       // ── Stage 2: Within each WA segment, sub-split on site-ID lines ──
@@ -11433,16 +11457,17 @@ Example:
       // (IHS_ optional, then CBT/NRW/EST then digits, or emoji 🆔, or Code:)
       const siteSplitRe = new RegExp(
         `(?=(?:^|\\n)\\s*(?:[✅👉🏾👉✍️]\\s*)*`+
-        `(?:(?:IHS[_\\s]*)?(?:${shortPfx}|NTH)[\\s_:,\\-]*\\d|🆔\\s*\\d|Code\\s*[:\\-]?\\s*\\d))`,
+        `(?:(?:IHS[_\\s]*)?(?:${shortPfx}|NTH)[\\s_:,\\-\\.]*\\d|🆔\\s*\\d|Code\\s*[:\\-]?\\s*\\d))`,
         'im'
       );
 
-      const blocks = []; // [{text, waDate}]
+      const blocks = []; // [{text, waDate, waSender}]
 
       for (const seg of rawSegments) {
         const trimmed = seg.trim();
         if (!trimmed) continue;
-        const waDate = waDateFromSeg(trimmed); // YYYY-MM-DD or null
+        const waDate   = waDateFromSeg(trimmed);   // YYYY-MM-DD or null
+        const waSender = waSenderFromSeg(trimmed); // e.g. "Lombe", "Mr Kenny CCS"
 
         // Sub-split on site-ID boundary lines within this WA message
         const subBlocks = trimmed.split(siteSplitRe);
@@ -11452,14 +11477,19 @@ Example:
           if (!t || t.length < 5) continue;
 
           // Gate: must look like a fuel report (same as Python _split_blocks filter)
-          const hasSite      = new RegExp(`(?:IHS[_\\s]*)?(?:${shortPfx}|NTH)[\\s_:,\\-]*\\d`,'i').test(t);
+          const hasSite      = new RegExp(`(?:IHS[_\\s]*)?(?:${shortPfx}|NTH)[\\s_:,\\-\\.]*\\d`,'i').test(t);
           const hasEmojiId   = /🆔\s*\d/.test(t);
           const hasCodeId    = /\bCode\s*[:\-]?\s*\d/i.test(t);
+          // "Site id 050m" / "Site ID: 050m" style — no region prefix, just a numeric ID
+          const hasSiteLabel = /Site\s*I[Dd]\s*[:\s]\s*\d/i.test(t);
           const hasFuel      = /(fuel|found|added|runtime|RT\b|Run\s*Time|Uplifted)/i.test(t);
           const hasStructure = /(Site|Date|Found|Added|RT|Run|CPH|Initial|Fuel)\s*[:\-]/i.test(t);
+          // Skip fuel-request / planning messages — have site IDs but zero fuel data
+          const isFuelRequest = /fuel\s*request\s*for/i.test(t);
 
-          if (!(hasSite || hasEmojiId || hasCodeId || (hasFuel && hasStructure))) continue;
-          blocks.push({ text: t, waDate });
+          if (isFuelRequest) { continue; } // silently skip fuel-request messages
+          if (!(hasSite || hasEmojiId || hasCodeId || hasSiteLabel || (hasFuel && hasStructure))) continue;
+          blocks.push({ text: t, waDate, waSender });
         }
       }
 
@@ -11474,18 +11504,19 @@ Example:
       let matched=0, skipped=0, faulty=0, filtered=0;
 
       for (let bi=0; bi<blocks.length; bi++) {
-        const {text, waDate} = blocks[bi];
-        const entry = parseBlock(text, bi, waDate, prefix, varMap);
-        if (!entry) { skipped++; continue; }
+        const {text, waDate, waSender} = blocks[bi];
+        const entry = parseBlock(text, bi, waDate, prefix, varMap, waSender);
+        if (!entry) { skipped++; continue; } // null = no fuel data — not worth logging
         if (entry._faulty) {
           faulty++;
           autoLog(`⚠️  Block ${bi+1}: ${entry._reason}`, 'warn');
+          if (_skippedLog.length < 200) _skippedLog.push({ reason: entry._reason || 'Faulty entry', date: entry.date || '', siteId: entry.siteId || '', block: text.substring(0,120) });
           results.push(entry);
           continue;
         }
         // Date-range filter (entry.date is YYYY-MM-DD)
-        if (dateFrom && entry.date < dateFrom) { filtered++; continue; }
-        if (dateTo   && entry.date > dateTo)   { filtered++; continue; }
+        if (dateFrom && entry.date < dateFrom) { filtered++; _skippedLog.push({reason:`Date ${entry.date} before filter start ${dateFrom}`, date:entry.date, siteId:entry.siteId||'', block:text.substring(0,120)}); continue; }
+        if (dateTo   && entry.date > dateTo)   { filtered++; _skippedLog.push({reason:`Date ${entry.date} after filter end ${dateTo}`, date:entry.date, siteId:entry.siteId||'', block:text.substring(0,120)}); continue; }
         matched++;
         results.push(entry);
       }
@@ -11495,7 +11526,8 @@ Example:
     }
 
     // ── parseBlock — faithful port of UniversalParser._parse_block ──
-    function parseBlock(blockText, blockIdx, waDate, prefix, varMap) {
+    function parseBlock(blockText, blockIdx, waDate, prefix, varMap, waSender) {
+      waSender = waSender || '';
       // Strip WA header cruft from lines for clean processing
       const waHeaderStrip = /\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}\s*-[^:]+:/g;
       const cleanText = blockText.replace(waHeaderStrip, '').trim();
@@ -11511,14 +11543,29 @@ Example:
       dateClean = dateClean.replace(/(\d)([A-Za-z])\//g, (_, d) => d+'0/');
 
       let writtenDate = null;
-      // Pattern 1: explicit "Date: DD/MM/YYYY" or bare date
-      const dateM1 = dateClean.match(/(?:Date\s*[:\-=*.]\s*)?(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i);
+      // Pattern 1: "Date: DD/MM/YY", "Date:DD/MM/YY", "Date28/03/26" (no separator)
+      // Strip the WA header line first so we don't match its timestamp as the written date.
+      const dateSearchText = dateClean.replace(/\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}\s*-[^\n]*/g, '');
+      const dateM1 = dateSearchText.match(/(?:Date\s*[:\-=*.]?\s*)(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i);
       if (dateM1) {
         const s = dateM1[1].replace(/-/g,'/');
         const p = s.split('/');
         if (p.length===3) {
           let yr = p[2]; if (yr.length===2) yr='20'+yr;
           writtenDate = `${yr}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+        }
+      }
+      // Pattern 1b: bare date with no "Date" label at all (e.g. "22/03/26" alone on a line)
+      // Only use if no labelled date was found above.
+      if (!writtenDate) {
+        const bareM = dateSearchText.match(/(?:^|\n)\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*(?:\n|$)/);
+        if (bareM) {
+          const s = bareM[1].replace(/-/g,'/');
+          const p = s.split('/');
+          if (p.length===3) {
+            let yr = p[2]; if (yr.length===2) yr='20'+yr;
+            writtenDate = `${yr}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+          }
         }
       }
       // Pattern 2: spaced date "14 - 12 - 2025"
@@ -11530,13 +11577,24 @@ Example:
         }
       }
 
-      // WA drift correction (mirrors Python _MAX_DATE_DRIFT_DAYS = 30)
-      const MAX_DRIFT_DAYS = 30;
+      // Pattern 3: "DATE 25 - 03 - 26" at bottom of Lombe blocks (BEFORE drift check)
+      if (!writtenDate) {
+        const dateM3 = dateSearchText.match(/\bDATE\s+(\d{1,2})\s*[-_]\s*(\d{1,2})\s*[-_]\s*(\d{2,4})/i);
+        if (dateM3) {
+          let yr = dateM3[3]; if (yr.length===2) yr='20'+yr;
+          writtenDate = `${yr}-${dateM3[2].padStart(2,'0')}-${dateM3[1].padStart(2,'0')}`;
+        }
+      }
+
+      // WA drift correction — applied AFTER all written-date patterns are tried.
+      // Mirrors Python _MAX_DATE_DRIFT_DAYS = 30.
+      // Raised to 60 to accommodate remote-area technicians who post many days late.
+      const MAX_DRIFT_DAYS = 60;
       if (writtenDate && waDate) {
         const drift = Math.abs((new Date(writtenDate) - new Date(waDate)) / 86400000);
         if (drift > MAX_DRIFT_DAYS) {
           if (drift >= 330 && drift <= 400) {
-            // Year typo — keep written date
+            // Year typo (e.g. "23/03/25" when it should be "23/03/26") — keep written date
             autoLog(`⚠️  Block ${blockIdx+1}: year-typo drift ${drift.toFixed(0)}d — keeping written date`, 'warn');
           } else {
             autoLog(`⚠️  Block ${blockIdx+1}: drift ${drift.toFixed(0)}d — using WA date ${waDate}`, 'warn');
@@ -11552,7 +11610,7 @@ Example:
       const shortPfx = prefix.split('_').pop();
       // Build site regex matching Python's site_pattern
       const siteRe = new RegExp(
-        `(?:IHS[_\\s]*)?(?:${shortPfx}|NTH)[\\s_:,\\-]*([0-9]{1,4}[A-Za-z]{0,2})`,
+        `(?:IHS[_\\s]*)?(?:${shortPfx}|NTH)[\\s_:,\\-\\.]*([0-9]{1,4}[A-Za-z]{0,2})`,
         'i'
       );
       let siteId = '';
@@ -11575,6 +11633,11 @@ Example:
       if (!siteId) {
         const bm = cleanText.match(/Site\s*I'?d\s*[:\-]?\s*(\d{2,4}[A-Za-z]{0,2})/i);
         if (bm) siteId = `${prefix}_${bm[1].toUpperCase()}`;
+      }
+      // "Site id 050m" / "Site ID 050m" — no prefix, just numeric id after label
+      if (!siteId) {
+        const sm = cleanText.match(/Site\s*[Ii][Dd]\s*[:\s]\s*(\d{2,4}[A-Za-z]{0,2})/i);
+        if (sm) siteId = `${prefix}_${sm[1].toUpperCase()}`;
       }
 
       if (siteId) {
@@ -11626,21 +11689,66 @@ Example:
       // Site name on same line as site ID
       if (!data['SITE NAME'] && siteId) {
         for (const line of lines) {
-          if (line.toUpperCase().includes(siteId)) {
+          if (line.toUpperCase().includes(siteId.split('_').pop())) {
             let sn = line.replace(siteRe,'').replace(/IHS[_\s]*(NRW|EST|CBT)[_\s:,\-]*[0-9]{0,4}[A-Za-z]{0,2}/ig,'').trim();
             sn = sn.replace(/\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}\s*-[^:]+:/,'').trim().replace(/^[:\-,\s]+/,'');
+            // Strip vehicle plate patterns (3 letters + space + 4 digits)
+            sn = sn.replace(/\b[A-Z]{2,3}\s*\d{4}\b/g,'').trim();
+            // Strip trailing "refueled" suffix (Jonathan-style: "NRW_209A Chavuma Rpt refueled")
+            sn = sn.replace(/\s*refueled\s*$/i,'').trim();
             if (sn && sn.length > 2) { data['SITE NAME'] = sn; break; }
           }
         }
       }
 
+      // ── 4b. NRW emoji-block site name extraction ──
+      // Lombe/Castro style: lines prefixed with ✅ where the site name appears
+      // either BEFORE the site-ID line, or as the first non-ID ✅ line.
+      // Pattern examples:
+      //   ✅ Maheba refugee camp / ✅Nrw : 260A  → site name = "Maheba refugee camp"
+      //   ✅Messenger A / ✅NRW 002m             → site name = "Messenger A"
+      //   ✅ KAMBAZHIA / ✅NRW 017m              → site name = "KAMBAZHIA"
+      if (!data['SITE NAME']) {
+        const emojiLines = lines
+          .map(l => l.replace(/^[✅👉🏾👉✍️\s]+/, '').trim())
+          .filter(l => l.length > 1);
+        // Find which line contains the site ID
+        const siteIdLineIdx = emojiLines.findIndex(l =>
+          /(?:IHS[_\s]*)?(?:NRW|CBT|EST|NTH)[\s_:,\-]*\d/i.test(l) ||
+          /🆔\s*\d/.test(l)
+        );
+        if (siteIdLineIdx > 0) {
+          // Site name is the line immediately before the site-ID line
+          let candidate = emojiLines[siteIdLineIdx - 1];
+          // Skip if it looks like a date or a WA header
+          if (candidate && !/^\d{1,2}[\-\/]\d{1,2}[\-\/]\d{2,4}/.test(candidate) &&
+              !/\d{1,2}\/\d{1,2}\/\d{4},\s*\d/.test(candidate)) {
+            // Strip any remaining emoji/punctuation from start
+            candidate = candidate.replace(/^[:\-,\s]+/, '').trim();
+            if (candidate.length > 1) data['SITE NAME'] = candidate;
+          }
+        }
+      }
+
+      // ── 4c. Site name from TECH_MANAGER lookup (last resort) ──
+      // If we still have no site name but have a site ID, use the TECH_MANAGER
+      // to find the technician — the site name itself is not stored there, but
+      // this guards against future extension. For now just ensure it's truly empty.
+      // (Site names are not in TECH_MANAGER, so this is a no-op placeholder.)
+
       // ── 5. NUMERIC CONVERSION — mirrors convert_numeric(allow_faulty=True for RT) ──
       const convertNum = (val, allowFaulty=false) => {
         if (val===undefined||val===null) return null;
-        let v = String(val).trim().replace(/,/g,'').replace(/[Ll]$/,'');
+        let v = String(val).trim().replace(/,/g,'')
+                     .replace(/\s*liters?\s*$/i,'')  // "100liters" → "100"
+                     .replace(/[Ll]$/,'');            // "100L" → "100" 
         if (!v || /^(h|hr|hrs|hour|hours)$/i.test(v)) return null;
         if (/^(fault|faulty|fault controller|faulty controller)$/i.test(v))
           return allowFaulty ? 'FAULTY' : null;
+        // "stolen", "..", "(stolen)", "..L" → treat as 0 (fuel was stolen/empty)
+        if (/^[\.\s\(\)]*$/.test(v) || /stolen/i.test(v) || /^\.*$/.test(v)) return 0;
+        // Strip parenthetical notes like "0L( Tank decanted)" → "0"
+        v = v.replace(/\s*\(.*\)\s*$/, '').trim().replace(/[Ll]$/, '');
         // Mixed alpha-numeric → strip letters
         if (/[a-zA-Z]/.test(v) && /\d/.test(v)) v = v.replace(/[^0-9.]/g,'');
         const n = parseFloat(v);
@@ -11666,10 +11774,18 @@ Example:
       if (data['SUPPLIER']) data['SUPPLIER'] = normaliseSupplier(data['SUPPLIER']) || normaliseSupplier(cleanText);
       else                  data['SUPPLIER'] = normaliseSupplier(cleanText);
 
-      // ── 7. TECHNICIAN — site-map lookup first, then kv, then N/A ──
+      // ── 7. TECHNICIAN — site-map lookup → kv field → WA sender name → N/A ──
       let tech = '';
       if (siteId) tech = TECH_MANAGER.getTechName(siteId) || '';
       if (!tech && data['NAME OF TECHNICIAN']) tech = String(data['NAME OF TECHNICIAN']).trim().toUpperCase();
+      // Fallback: use the WhatsApp sender name when no other source resolves.
+      // Strip role suffixes like "CCS", "~" etc. so we get a clean name.
+      if (!tech && waSender) {
+        // Only use if sender is not a bare phone number (+260...)
+        if (!/^\+?\d[\d\s\-]+$/.test(waSender.trim())) {
+          tech = waSender.replace(/\s*CCS\s*$/i, '').replace(/\s*IHS\s*$/i, '').trim().toUpperCase();
+        }
+      }
       data['NAME OF TECHNICIAN'] = tech || 'N/A';
 
       // ── 8. ULTRA-PERMISSIVE VALIDATION (Python: accept if ANY piece exists) ──
@@ -11686,9 +11802,17 @@ Example:
       const entryDate = data['CURRENT VISIT DATE'] || '';
 
       // Fuel left = found + added
+      // Also try to extract "Final level" / "Final dp" as a cross-check
+      let finalLevelRaw = '';
+      const finalM = cleanText.match(/(?:final(?:\s*fuel)?\s*(?:level|dp)|final\s*level)\s*[:\-]?\s*([\d]+)/i);
+      if (finalM) finalLevelRaw = finalM[1];
+
       const fuelFoundN = Number(data['FUEL FOUND'])||0;
       const fuelAddedN = Number(data['FUEL ADDED'])||0;
-      const fuelLeft   = fuelFoundN + fuelAddedN;
+      let   fuelLeft   = fuelFoundN + fuelAddedN;
+      // If fuelLeft computed to 0 but we have a final level reading, use it
+      const finalLevelN = Number(finalLevelRaw) || 0;
+      if (fuelLeft === 0 && finalLevelN > 0) fuelLeft = finalLevelN;
 
       // Mark faulty if truly missing both siteId and fuelAdded
       const issues = [];
@@ -11720,7 +11844,7 @@ Example:
         currRt:    Number(data['CURRENT DG RUN HOURS'])||0,
         prevRt:    Number(data['PREVIOUS DG RUN HOURS'])||0,
         siteName:  data['SITE NAME'] || '',
-        sender:    '',
+        sender:    waSender || '',
         _faulty:   issues.length > 0,
         _reason:   issues.join('; '),
         _selected: issues.length === 0,
@@ -11769,6 +11893,90 @@ Example:
       // Show "Write to Excel" button if an xlsx template is already loaded
       const writeBtn = document.getElementById('autoWriteXlsxBtn');
       if (writeBtn) writeBtn.style.display = window._autoXlsxFile ? '' : 'none';
+
+      // ── Skipped entries log panel ──
+      renderSkippedLog();
+    }
+
+    function renderSkippedLog() {
+      // Remove existing panel
+      const existing = document.getElementById('skippedLogPanel');
+      if (existing) existing.remove();
+      if (!_skippedLog || _skippedLog.length === 0) return;
+
+      const section = document.getElementById('autoPreviewSection');
+      if (!section) return;
+
+      // Only show entries that have meaningful data (have a siteId or recognisable reason)
+      const meaningful = _skippedLog.filter(s => s.siteId || (s.reason && s.reason !== 'No recognisable data in block'));
+      if (meaningful.length === 0) return;
+
+      // Cap display at 100 rows — full data still available via download
+      const displayRows = meaningful.slice(0, 100);
+      const rowsHtml = displayRows.map((s,i) =>
+        `<tr><td>${i+1}</td><td class="font-mono" style="white-space:nowrap;">${s.date||'—'}</td>` +
+        `<td class="font-mono" style="white-space:nowrap;">${escHtml(s.siteId||'—')}</td>` +
+        `<td style="color:var(--status-danger);max-width:200px;">${escHtml(s.reason||'')}</td>` +
+        `<td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(s.block||'')}">${escHtml((s.block||'').substring(0,80))}</td></tr>`
+      ).join('');
+
+      const panel = document.createElement('div');
+      panel.id = 'skippedLogPanel';
+      panel.className = 'card mt-4';
+      panel.style.cssText = 'border:1px solid var(--status-warning);background:var(--status-warning-bg);';
+      panel.innerHTML =
+        `<div class="flex items-center justify-between mb-3">` +
+          `<h4 class="font-semibold" style="color:#92400e;">⚠️ ${meaningful.length} Faulty Entries` +
+          `${meaningful.length > 100 ? ' <span style="font-weight:normal;font-size:0.8em;">(showing first 100)</span>' : ''}</h4>` +
+          `<div class="flex gap-2">` +
+            `<button class="btn btn-secondary btn-sm" onclick="downloadSkippedLog('xlsx')">⬇ Excel</button>` +
+            `<button class="btn btn-secondary btn-sm" onclick="downloadSkippedLog('csv')">⬇ CSV</button>` +
+          `</div>` +
+        `</div>` +
+        `<p class="text-sm mb-2" style="color:var(--neutral-600);">Entries with site/fuel data that could not be fully parsed. Download for full list.</p>` +
+        `<div style="max-height:260px;overflow-y:auto;">` +
+          `<table class="table" style="font-size:0.76rem;"><thead><tr>` +
+          `<th>#</th><th>Date</th><th>Site ID</th><th>Reason</th><th>Preview</th>` +
+          `</tr></thead><tbody>${rowsHtml}</tbody></table>` +
+        `</div>`;
+      section.appendChild(panel);
+    }
+
+    function downloadSkippedLog(fmt) {
+      if (!_skippedLog || _skippedLog.length === 0) {
+        showToast('No skipped entries to export', 'warning'); return;
+      }
+      const headers = ['#','Date','Site ID','Reason Skipped','Block Preview'];
+      const rows = _skippedLog.map((s,i) => [
+        i+1, s.date||'', s.siteId||'', s.reason||'', (s.block||'').replace(/[\r\n]+/g,' ').substring(0,200)
+      ]);
+
+      if (fmt === 'csv') {
+        const csv = [headers, ...rows].map(r =>
+          r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')
+        ).join('\n');
+        const blob = new Blob([csv], {type:'text/csv'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `NRW_Skipped_Entries_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        showToast('CSV downloaded', 'ok');
+        return;
+      }
+
+      // XLSX — use SheetJS if available, otherwise fall back to CSV
+      if (typeof XLSX !== 'undefined') {
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+        ws['!cols'] = [{wch:4},{wch:12},{wch:14},{wch:40},{wch:60}];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Skipped Entries');
+        XLSX.writeFile(wb, `NRW_Skipped_Entries_${new Date().toISOString().slice(0,10)}.xlsx`);
+        showToast('Excel downloaded', 'ok');
+      } else {
+        // SheetJS not loaded — fall back to CSV with .xlsx extension note
+        showToast('SheetJS not available — downloading as CSV instead', 'warning');
+        downloadSkippedLog('csv');
+      }
     }
 
     function autoSelectAll(val) {
@@ -12130,7 +12338,7 @@ Example:
               if (norm === 'CURRENT DG RUN HOURS' || norm === 'CURRENT RT')        colOf['__CURRRT__']     = parseInt(ci);
               if (norm === 'PREVIOUS DG RUN HOURS' || norm === 'PREVIOUS RT')      colOf['__PREVRT__']     = parseInt(ci);
               if (['I.H.S SITE ID','IHS SITE ID','I.H.S. SITE ID'].includes(norm)) colOf['__IHSID__']     = parseInt(ci);
-              if (norm === 'LAST VISIT DATE')                                       colOf['__LASTDATE__']   = parseInt(ci);
+              if (norm === 'LAST VISIT DATE' || norm === 'PREVIOUS VISIT DATE')     colOf['__LASTDATE__']   = parseInt(ci);
               if (norm === 'PREVIOUS DIESEL LEVEL')                                 colOf['__PREVDIESEL__'] = parseInt(ci);
             }
             break;
@@ -12145,7 +12353,7 @@ Example:
           '__TECH__':       ['TECHNICIAN NAME','TECHNICIAN','TECH NAME'],
           '__IHSID__':      ['IHS SITE ID','I.H.S. SITE ID','IHS_SITE_ID'],
           '__FUELLEFT__':   ['FUEL LEFT'],
-          '__LASTDATE__':   ['LAST VISIT DATE'],
+          '__LASTDATE__':   ['LAST VISIT DATE', 'PREVIOUS VISIT DATE'],
           '__PREVDIESEL__': ['PREVIOUS DIESEL LEVEL']
         };
         for (const [alias, alts] of Object.entries(aliasFallbacks)) {
@@ -12278,7 +12486,7 @@ Example:
           const cFnd = String(entry['FUEL FOUND']             ?? entry.fuelFound ?? '');
           const cAdd = String(entry['FUEL ADDED']             ?? entry.fuelAdded ?? '');
           const dupKey = `${dateStr}|${siteIdUpper}|${cRt}|${cFnd}|${cAdd}`;
-          if (existingKeys.has(dupKey)) { dupeSkipped++; autoLog(`⏭️ Dup: ${dateStr} | ${siteIdUpper}`,'warn'); continue; }
+          if (existingKeys.has(dupKey)) { dupeSkipped++; continue; } // dup — silent skip
 
           // Compute derived values
           const fuelFound  = Number(entry['FUEL FOUND'] ?? entry.fuelFound ?? 0) || 0;
@@ -12289,12 +12497,21 @@ Example:
           const cph        = Number(entry['CPH'] ?? entry.cph ?? 0) || 0;
 
           // Propagation values for new row
-          const hist = siteHistory[siteIdUpper] || [];
-          hist.sort((a,b) => {
-            const toISO = s => { const p=s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); return p?`${p[3]}-${p[2]}-${p[1]}`:s; };
-            return toISO(a.dateStr).localeCompare(toISO(b.dateStr));
-          });
+          // Clone the array before sorting so we never mutate the shared siteHistory
+          // reference — otherwise multi-row imports for the same site in one batch
+          // would see a corrupted prevVisit on the second and later entries.
+          const toISODate = s => {
+            // Handles both DD/MM/YYYY (from cellVal) and YYYY-MM-DD (from parseBlock)
+            const p1 = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (p1) return `${p1[3]}-${p1[2].padStart(2,'0')}-${p1[1].padStart(2,'0')}`;
+            const p2 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (p2) return s; // already ISO
+            return s;
+          };
+          const hist = (siteHistory[siteIdUpper] || []).slice(); // ← cloned copy
+          hist.sort((a,b) => toISODate(a.dateStr).localeCompare(toISODate(b.dateStr)));
           const prevVisit  = hist.length ? hist[hist.length-1] : null;
+          // Only fall back to own dateStr when there is genuinely no prior visit at all
           const prevDate   = prevVisit ? prevVisit.dateStr : dateStr;
           const prevDiesel = prevVisit ? prevVisit.fuelLeft : fuelLeft;
 
@@ -12325,7 +12542,7 @@ Example:
           // Log what we're about to write so missing values are visible in the log
           const siteName = entry['SITE NAME']  || entry.siteName  || '';
           const techName = entry['NAME OF TECHNICIAN'] || entry.techName || 'N/A';
-          autoLog(`  ↳ Row ${newRowNum}: siteId="${siteIdUpper}" siteName="${siteName}" tech="${techName}"`);
+          // Per-row detail suppressed to keep UI responsive (visible in final summary)
           setCell('__SITEID__',   's', siteIdUpper);
           setCell('__SITENAME__', 's', siteName);
           setCell('__TECH__',     's', techName);
@@ -12342,10 +12559,17 @@ Example:
 
           // Propagation fields for new row
           if (colOf['__LASTDATE__'] !== undefined && prevDate) {
-            const m = prevDate.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-            if (m) {
-              const serial = dateToSerial(new Date(Date.UTC(parseInt(m[3]),parseInt(m[2])-1,parseInt(m[1]))));
-              cellData[colOf['__LASTDATE__']] = {type:'date', val: serial, s: rowStyleMap[colOf['__LASTDATE__']]};
+            // Handle both DD/MM/YYYY (from existing Excel rows via cellVal)
+            // and YYYY-MM-DD (from parseBlock output stored in siteHistory within same batch)
+            let ldSerial = null;
+            const m1 = prevDate.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (m1) ldSerial = dateToSerial(new Date(Date.UTC(parseInt(m1[3]),parseInt(m1[2])-1,parseInt(m1[1]))));
+            if (!ldSerial) {
+              const m2 = prevDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+              if (m2) ldSerial = dateToSerial(new Date(Date.UTC(parseInt(m2[1]),parseInt(m2[2])-1,parseInt(m2[3]))));
+            }
+            if (ldSerial !== null) {
+              cellData[colOf['__LASTDATE__']] = {type:'date', val: ldSerial, s: rowStyleMap[colOf['__LASTDATE__']]};
             }
           }
           if (colOf['__PREVDIESEL__'] !== undefined && prevDiesel > 0) {
@@ -12438,11 +12662,15 @@ Example:
 
           autoLog(`🔄 Propagation: ${Object.keys(siteRowMap).length} unique sites found`);
 
-          // DD/MM/YYYY string → Excel date serial
+          // DD/MM/YYYY or YYYY-MM-DD string → Excel date serial
           const dateStrToSerial = (s) => {
-            const m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-            if (!m) return null;
-            return dateToSerial(new Date(Date.UTC(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1]))));
+            // Try DD/MM/YYYY first (output of cellVal for date serials)
+            const m1 = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (m1) return dateToSerial(new Date(Date.UTC(parseInt(m1[3]), parseInt(m1[2])-1, parseInt(m1[1]))));
+            // Try YYYY-MM-DD (output of parseBlock / stored as text)
+            const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m2) return dateToSerial(new Date(Date.UTC(parseInt(m2[1]), parseInt(m2[2])-1, parseInt(m2[3]))));
+            return null;
           };
 
           // Collect patches: rowNum → [{addr, colIdx, cellXml}]
@@ -12458,10 +12686,13 @@ Example:
           const sOf = (ci) => rowStyleMap[ci] ? ` s="${rowStyleMap[ci]}"` : '';
 
           for (const rows of Object.values(siteRowMap)) {
-            // Sort by date ascending
+            // Sort by date ascending — handles both DD/MM/YYYY and YYYY-MM-DD
             const toISO = s => {
-              const p = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-              return p ? `${p[3]}-${p[2].padStart(2,'0')}-${p[1].padStart(2,'0')}` : s;
+              const p1 = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+              if (p1) return `${p1[3]}-${p1[2].padStart(2,'0')}-${p1[1].padStart(2,'0')}`;
+              const p2 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+              if (p2) return s; // already ISO
+              return s;
             };
             rows.sort((a, b) => toISO(a.cells[colOf['__DATE__']]?.val||'')
                                 .localeCompare(toISO(b.cells[colOf['__DATE__']]?.val||'')));

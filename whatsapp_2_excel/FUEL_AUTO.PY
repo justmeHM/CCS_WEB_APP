@@ -157,11 +157,15 @@ class MultiSourceConfig:
             sheet_name="fuel capture",
             site_prefix="IHS_EST",
             variation_mapping={
-                "CURRENT DG RUN HOURS": ["Run Time", "Runtime", "Rt", "Run"],
-                "PREVIOUS DG RUN HOURS": ["Previous runtime"],
-                "FUEL FOUND": ["Intial dp", "Initial dp", "Intial level", "Initial"],
-                "FUEL ADDED": ["Added fuel", "Fuel added", "Added"],
-                "SITE ID": ["EST", "Site ID", "Site I'd", "Site I'd:", "Site ID :"],
+                # RunT / Run _Time / Rt ; / Run : / Run: all handled
+                "CURRENT DG RUN HOURS": ["Run Time", "RunTime", "RunT", "Run _Time", "Runtime", "Rt", "Run"],
+                "PREVIOUS DG RUN HOURS": ["Previous runtime", "Previous Run Time", "Previous Rt"],
+                # Initial: (no dp suffix) also matched
+                "FUEL FOUND": ["Intial dp", "Initial dp", "Intial level", "Initial level", "Initial"],
+                # Fuel aded / Fuel add / Fuel axdded all handled; semicolon sep caught by split fix below
+                "FUEL ADDED": ["Fuel added", "Fuel aded", "Fuel add", "Fuel axdded", "Added fuel", "Added"],
+                # NTH prefix + bare numbers like 286A handled by site_pattern fix below
+                "SITE ID": ["EST", "NTH", "Site ID", "Site I'd", "Site I'd:", "Site ID :"],
                 "SITE NAME": ["Site name", "Site Name", "Name"],
                 "SUPPLIER": ["source", "Fuel source"],
                 "DATE": ["Date"],
@@ -201,6 +205,11 @@ class UniversalNormalizer:
             rf"(?:IHS[_\s]*)?({combined})[\s_:,-]*([0-9]{{1,4}}[A-Za-z]{{0,2}})",
             re.IGNORECASE
         )
+        # Bare number pattern: e.g. "Site I'd :286A" with no EST/NTH prefix
+        self.bare_site_pattern = re.compile(
+            r"Site\s*I\'?d\s*[:\-]?\s*(\d{2,4}[A-Za-z]{0,2})",
+            re.IGNORECASE
+        )
         self.date_pattern = re.compile(r"(?:Date\s*[:\-=*.]?\s*)?(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})", re.IGNORECASE)
         self.date_pattern_spaced = re.compile(r"(\d{1,2})\s*[-_]\s*(\d{1,2})\s*[-_]\s*(\d{2,4})")
         self.wa_header_strip = re.compile(r'\d{1,2}/\d{1,2}/\d{4},\s*\d{1,2}:\d{2}\s*-[^:]+:', re.MULTILINE)
@@ -220,12 +229,21 @@ class UniversalNormalizer:
         m3 = re.search(r'\bCode\s*[:\-]?\s*(\d{1,4}[A-Za-z]{0,2})', text, re.IGNORECASE)
         if m3:
             return f"{self.config.site_prefix}_{m3.group(1).upper()}"
+        # Bare number fallback: "Site I'd :286A" — no prefix in message
+        if hasattr(self, 'bare_site_pattern'):
+            m4 = self.bare_site_pattern.search(text)
+            if m4:
+                return f"{self.config.site_prefix}_{m4.group(1).upper()}"
         return ""
 
     def normalize_date(self, text: str) -> Optional[datetime]:
         if not text:
             return None
         clean = self.wa_header_strip.sub('', text)
+        # Pre-clean: remove stray spaces inside date strings like "14 /12/2025", "20/03 /2026"
+        clean = re.sub(r'(\d+)\s*/\s*', r'\1/', clean)
+        # Pre-clean: fix letter-digit typos like "3p/09" → "30/09"
+        clean = re.sub(r'(\d)([A-Za-z])/', lambda m: m.group(1) + '0/', clean)
         m = self.date_pattern.search(clean)
         if m:
             s = m.group(1).strip().replace('-', '/').replace('_', '/')
@@ -254,7 +272,7 @@ class UniversalNormalizer:
         if value is None:
             return None
         v = str(value).strip().replace(",", "").replace("L", "").replace("l", "")
-        if v == "":
+        if v == "" or v.lower() in ('h', 'hr', 'hrs', 'hour', 'hours'):
             return None
         if v.lower() in ['fault', 'faulty', 'fault controller', 'faulty controller']:
             return "FAULTY" if allow_faulty else None
@@ -306,10 +324,15 @@ class UniversalParser:
             if last_processed_date and "CURRENT VISIT DATE" in res:
                 try:
                     entry_date = datetime.strptime(res["CURRENT VISIT DATE"], "%d/%m/%Y")
-                    if entry_date <= last_processed_date:
+                    # Use strict < so entries ON the same day as last_processed_date are still
+                    # allowed through. True duplicates are caught later by the 5-field
+                    # existing_records set check in update_excel(). Using <= here would
+                    # silently drop all entries for the last recorded date whenever the
+                    # automation is re-run against the same (or a larger) chat export.
+                    if entry_date < last_processed_date:
                         skipped += 1
                         if error_logger:
-                            error_logger(f"⏭️ Block {idx+1}: Date {res['CURRENT VISIT DATE']} is not newer than last processed date")
+                            error_logger(f"⏭️ Block {idx+1}: Date {res['CURRENT VISIT DATE']} is older than last processed date")
                         continue
                 except Exception as e:
                     logging.warning(f"Could not parse date for filtering: {e}")
@@ -432,7 +455,9 @@ class UniversalParser:
         return ""
 
     # Max days gap between written date and WhatsApp post date before we use the fallback.
-    _MAX_DATE_DRIFT_DAYS = 7
+    # Eastern technicians often post 8-10 days after the actual refuel date (remote areas,
+    # delayed signal). 30 days gives a safe margin while still catching genuine wrong-year typos.
+    _MAX_DATE_DRIFT_DAYS = 30
 
     def _parse_block(self, block: str, block_idx: int, wa_date: Optional[datetime] = None) -> Optional[Dict]:
         data: Dict[str, Any] = {}
@@ -450,12 +475,23 @@ class UniversalParser:
             if wa_date:
                 drift = abs((dt - wa_date).days)
                 if drift > self._MAX_DATE_DRIFT_DAYS:
-                    logging.warning(
-                        f"⚠️  Block {block_idx+1}: Written date {dt.strftime('%d/%m/%Y')} is "
-                        f"{drift} day(s) away from WhatsApp post date "
-                        f"{wa_date.strftime('%d/%m/%Y')} — using WhatsApp date as fallback."
-                    )
-                    dt = wa_date
+                    # ~365d drift almost always means a year typo (e.g. "2024" vs "2025").
+                    # In that case the written date is closer to correct than the WA post date.
+                    # Only fall back to WA date for moderate drifts (31-364d) that suggest
+                    # a genuinely late post, not a wrong-year typo.
+                    if 330 <= drift <= 400:
+                        logging.warning(
+                            f"⚠️  Block {block_idx+1}: Written date {dt.strftime('%d/%m/%Y')} "
+                            f"looks like a year typo ({drift}d drift) — keeping written date."
+                        )
+                        # Keep dt as-is (year typo: trust the written date)
+                    else:
+                        logging.warning(
+                            f"⚠️  Block {block_idx+1}: Written date {dt.strftime('%d/%m/%Y')} is "
+                            f"{drift} day(s) away from WhatsApp post date "
+                            f"{wa_date.strftime('%d/%m/%Y')} — using WhatsApp date as fallback."
+                        )
+                        dt = wa_date
             data["CURRENT VISIT DATE"] = dt.strftime("%d/%m/%Y")
         elif wa_date:
             # No written date found at all — use the WhatsApp timestamp directly.
@@ -491,7 +527,7 @@ class UniversalParser:
                     continue
                 for var in variants:
                     if var.lower() in lower_line:
-                        parts = re.split(r"[:\-=]", line, 1)
+                        parts = re.split(r"[:\-=;]", line, 1)  # semicolon also used by some technicians
                         if len(parts) > 1:
                             # Standard "Label: value" or "Label - value" format
                             value = parts[1].strip()
