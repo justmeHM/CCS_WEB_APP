@@ -1242,58 +1242,114 @@
     }
     
     .sidebar {
-      width: 280px;
+      width: 260px;
       background: white;
       border-right: 1px solid var(--neutral-200);
-      padding: var(--space-6);
+      padding: var(--space-5) var(--space-4);
       position: fixed;
       top: 0;
       left: 0;
       bottom: 0;
       overflow-y: auto;
+      overflow-x: hidden;
       transition: width var(--transition-base) var(--ease-out);
       z-index: 100;
+      display: flex;
+      flex-direction: column;
     }
     
     .sidebar.collapsed {
-      width: 80px;
+      width: 72px;
     }
     
     .sidebar-logo {
-      padding: var(--space-4) 0;
-      margin-bottom: var(--space-6);
+      padding: var(--space-3) var(--space-2);
+      margin-bottom: var(--space-5);
       border-bottom: 1px solid var(--neutral-200);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    
+    .sidebar-logo-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, var(--accent-700), var(--accent-600));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: var(--text-sm);
+      flex-shrink: 0;
+    }
+
+    .sidebar-logo-text {
+      overflow: hidden;
+      transition: opacity var(--transition-base) var(--ease-out), max-width var(--transition-base) var(--ease-out);
+      max-width: 200px;
+    }
+
+    .sidebar.collapsed .sidebar-logo-text {
+      opacity: 0;
+      max-width: 0;
     }
     
     .sidebar-logo h1 {
-      font-size: var(--text-2xl);
+      font-size: var(--text-lg);
       font-weight: 700;
-      background: linear-gradient(135deg, var(--accent-700), var(--accent-600));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--neutral-900);
+      white-space: nowrap;
     }
-    
-    .sidebar.collapsed .sidebar-logo h1 {
-      font-size: var(--text-base);
+
+    .sidebar-logo .logo-sub {
+      font-size: var(--text-xs);
+      color: var(--neutral-500);
+      font-weight: 400;
+      white-space: nowrap;
+      margin-top: 1px;
+    }
+
+    /* Nav section groups */
+    .nav-group {
+      margin-bottom: var(--space-5);
+    }
+
+    .nav-group-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--neutral-400);
+      padding: 0 var(--space-3);
+      margin-bottom: var(--space-2);
+      white-space: nowrap;
+      overflow: hidden;
+      transition: opacity var(--transition-base);
+    }
+
+    .sidebar.collapsed .nav-group-label {
+      opacity: 0;
     }
     
     .nav-item {
       display: flex;
       align-items: center;
       gap: var(--space-3);
-      padding: var(--space-3) var(--space-4);
+      padding: var(--space-3) var(--space-3);
       border-radius: var(--radius-lg);
-      color: var(--neutral-700);
+      color: var(--neutral-600);
       font-weight: 500;
       font-size: var(--text-sm);
       transition: all var(--transition-fast) var(--ease-out);
-      margin-bottom: var(--space-1);
+      margin-bottom: 2px;
       cursor: pointer;
       border: none;
       background: transparent;
       width: 100%;
       text-align: left;
+      position: relative;
     }
     
     .nav-item:hover {
@@ -1304,46 +1360,573 @@
     .nav-item.active {
       background: linear-gradient(135deg, var(--accent-50), var(--accent-100));
       color: var(--accent-700);
-      box-shadow: 0 2px 8px rgba(196, 30, 58, 0.1);
+      box-shadow: 0 2px 8px rgba(196, 30, 58, 0.08);
+    }
+
+    .nav-item.active i {
+      color: var(--accent-600);
     }
     
     .nav-item i {
-      width: 24px;
-      font-size: var(--text-lg);
+      width: 20px;
+      font-size: var(--text-base);
+      flex-shrink: 0;
+      text-align: center;
+      color: var(--neutral-500);
+      transition: color var(--transition-fast);
+    }
+
+    .nav-item:hover i {
+      color: var(--neutral-800);
+    }
+
+    .nav-item span {
+      white-space: nowrap;
+      overflow: hidden;
+      transition: opacity var(--transition-base), max-width var(--transition-base);
+      max-width: 200px;
     }
     
     .sidebar.collapsed .nav-item span {
-      display: none;
+      opacity: 0;
+      max-width: 0;
+    }
+
+    /* Tooltip for collapsed nav */
+    .sidebar.collapsed .nav-item::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--neutral-900);
+      color: white;
+      font-size: var(--text-xs);
+      font-weight: 500;
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-md);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+      z-index: 200;
+    }
+
+    .sidebar.collapsed .nav-item:hover::after {
+      opacity: 1;
+    }
+
+    /* ===== BREADCRUMB ===== */
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-xs);
+      color: var(--neutral-500);
+      margin-bottom: var(--space-5);
+      padding: var(--space-2) 0;
+      flex-wrap: wrap;
+    }
+
+    .breadcrumb-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .breadcrumb-item a, .breadcrumb-item span {
+      color: var(--neutral-500);
+      font-weight: 500;
+      cursor: pointer;
+      transition: color var(--transition-fast);
+    }
+
+    .breadcrumb-item a:hover {
+      color: var(--accent-600);
+    }
+
+    .breadcrumb-item.current span {
+      color: var(--neutral-900);
+      font-weight: 600;
+      cursor: default;
+    }
+
+    .breadcrumb-sep {
+      color: var(--neutral-300);
+      font-size: var(--text-xs);
+    }
+
+    body.dark-mode .breadcrumb-item.current span {
+      color: #c9d1d9;
     }
     
     /* ===== MAIN CONTENT ===== */
     .main-content {
       flex: 1;
-      margin-left: 280px;
-      padding: var(--space-6);
+      margin-left: 260px;
+      padding: var(--space-5) var(--space-6);
       transition: margin-left var(--transition-base) var(--ease-out);
+      min-width: 0;
     }
     
     .main-content.expanded {
-      margin-left: 80px;
+      margin-left: 72px;
     }
     
-    /* ===== TOP BAR ===== */
+    /* ===== TOP BAR - STREAMLINED ===== */
     .top-bar {
       background: var(--glass-bg);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--glass-border);
-      padding: var(--space-4) var(--space-6);
+      padding: var(--space-3) var(--space-5);
       position: sticky;
       top: 0;
       z-index: 90;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: var(--space-6);
+      gap: var(--space-4);
+      margin-bottom: var(--space-2);
       border-radius: var(--radius-xl);
       box-shadow: var(--shadow-sm);
+    }
+
+    /* ===== COMMAND PALETTE ===== */
+    .cmd-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 38, 52, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 9998;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 15vh;
+      opacity: 0;
+      visibility: hidden;
+      transition: all var(--transition-base) var(--ease-out);
+    }
+
+    .cmd-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .cmd-palette {
+      background: white;
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-xl);
+      width: 90%;
+      max-width: 560px;
+      overflow: hidden;
+      transform: scale(0.96) translateY(-8px);
+      transition: all var(--transition-base) var(--ease-spring);
+      border: 1px solid var(--neutral-200);
+    }
+
+    .cmd-overlay.active .cmd-palette {
+      transform: scale(1) translateY(0);
+    }
+
+    .cmd-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--neutral-200);
+    }
+
+    .cmd-input-wrap i {
+      color: var(--neutral-500);
+      font-size: var(--text-lg);
+      flex-shrink: 0;
+    }
+
+    .cmd-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: var(--text-base);
+      font-family: var(--font-sans);
+      background: transparent;
+      color: var(--neutral-900);
+    }
+
+    .cmd-input::placeholder {
+      color: var(--neutral-400);
+    }
+
+    .cmd-kbd-hint {
+      font-size: var(--text-xs);
+      color: var(--neutral-400);
+      white-space: nowrap;
+    }
+
+    .cmd-body {
+      max-height: 380px;
+      overflow-y: auto;
+    }
+
+    .cmd-section-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--neutral-400);
+      padding: var(--space-3) var(--space-5) var(--space-1);
+    }
+
+    .cmd-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-5);
+      cursor: pointer;
+      transition: background var(--transition-fast);
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    .cmd-item:hover, .cmd-item.selected {
+      background: var(--neutral-50);
+    }
+
+    .cmd-item-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--neutral-100);
+      color: var(--neutral-600);
+      font-size: var(--text-sm);
+      flex-shrink: 0;
+    }
+
+    .cmd-item.action .cmd-item-icon {
+      background: var(--accent-100);
+      color: var(--accent-600);
+    }
+
+    .cmd-item-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .cmd-item-label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--neutral-900);
+    }
+
+    .cmd-item-sub {
+      font-size: var(--text-xs);
+      color: var(--neutral-500);
+      margin-top: 1px;
+    }
+
+    .cmd-item-tag {
+      font-size: var(--text-xs);
+      color: var(--neutral-500);
+      background: var(--neutral-100);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+    }
+
+    .cmd-footer {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-3) var(--space-5);
+      border-top: 1px solid var(--neutral-200);
+      background: var(--neutral-50);
+    }
+
+    .cmd-footer-hint {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--text-xs);
+      color: var(--neutral-500);
+    }
+
+    body.dark-mode .cmd-palette {
+      background: #161b22;
+      border-color: #30363d;
+    }
+    body.dark-mode .cmd-input-wrap {
+      border-color: #30363d;
+    }
+    body.dark-mode .cmd-input {
+      color: #c9d1d9;
+    }
+    body.dark-mode .cmd-item:hover, body.dark-mode .cmd-item.selected {
+      background: #21262d;
+    }
+    body.dark-mode .cmd-item-icon {
+      background: #21262d;
+      color: #8b949e;
+    }
+    body.dark-mode .cmd-item-label {
+      color: #c9d1d9;
+    }
+    body.dark-mode .cmd-footer {
+      background: #0d1117;
+      border-color: #30363d;
+    }
+
+    /* ===== DESTRUCTIVE CONFIRM INPUT ===== */
+    .danger-confirm-wrap {
+      margin-top: var(--space-4);
+    }
+
+    .danger-confirm-wrap .confirm-phrase {
+      font-size: var(--text-sm);
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--status-danger);
+      background: var(--status-danger-bg);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      display: inline-block;
+      margin: var(--space-2) 0 var(--space-3);
+      letter-spacing: 0.04em;
+    }
+
+    .danger-confirm-input {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      border: 1.5px solid var(--neutral-200);
+      border-radius: var(--radius-lg);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      transition: border-color var(--transition-fast);
+      outline: none;
+    }
+
+    .danger-confirm-input:focus {
+      border-color: var(--status-danger);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+
+    .danger-confirm-input.matched {
+      border-color: var(--status-success);
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+    }
+
+    /* tour-backdrop moved above */
+
+    .tour-spotlight {
+      position: absolute;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 0 0 9999px rgba(26, 38, 52, 0.7);
+      transition: all var(--transition-slow) var(--ease-out);
+      pointer-events: none;
+    }
+
+    .tour-tooltip {
+      position: fixed;
+      background: white;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+      padding: var(--space-5);
+      max-width: 320px;
+      z-index: 9991;
+      border: 1px solid var(--neutral-200);
+      animation: spring-pop 0.3s var(--ease-spring);
+      pointer-events: all;
+    }
+
+    .tour-step-indicator {
+      font-size: var(--text-xs);
+      color: var(--neutral-400);
+      font-weight: 600;
+      margin-bottom: var(--space-2);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .tour-title {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--neutral-900);
+      margin-bottom: var(--space-2);
+    }
+
+    .tour-desc {
+      font-size: var(--text-sm);
+      color: var(--neutral-600);
+      line-height: 1.6;
+      margin-bottom: var(--space-4);
+    }
+
+    .tour-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+    }
+
+    /* ===== DENSITY TOGGLE ===== */
+    .table-density-compact .table td,
+    .table-density-compact .table th {
+      padding: var(--space-2) var(--space-3);
+    }
+
+    .table-density-comfortable .table td,
+    .table-density-comfortable .table th {
+      padding: var(--space-5) var(--space-4);
+    }
+
+    .density-toggle {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: var(--neutral-100);
+      border-radius: var(--radius-lg);
+      padding: 3px;
+    }
+
+    .density-btn {
+      padding: 4px 10px;
+      border-radius: var(--radius-md);
+      border: none;
+      background: transparent;
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: var(--neutral-500);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .density-btn.active {
+      background: white;
+      color: var(--neutral-900);
+      box-shadow: var(--shadow-xs);
+    }
+
+    body.dark-mode .density-btn.active {
+      background: #30363d;
+      color: #c9d1d9;
+    }
+
+    /* ===== COLUMN CHOOSER ===== */
+    .col-chooser-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .col-chooser-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      padding: 4px 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--neutral-200);
+      background: white;
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: var(--neutral-600);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .col-chooser-btn:hover {
+      background: var(--neutral-50);
+      border-color: var(--neutral-300);
+      color: var(--neutral-900);
+    }
+    .col-chooser-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      background: white;
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      z-index: 500;
+      min-width: 200px;
+      padding: var(--space-2) 0;
+      display: none;
+      animation: spring-scale 0.2s var(--ease-spring) both;
+    }
+    .col-chooser-dropdown.open { display: block; }
+    .col-chooser-header {
+      padding: var(--space-2) var(--space-4);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--neutral-400);
+      border-bottom: 1px solid var(--neutral-100);
+      margin-bottom: var(--space-1);
+    }
+    .col-chooser-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: var(--neutral-700);
+      cursor: pointer;
+      user-select: none;
+      transition: background var(--transition-fast);
+    }
+    .col-chooser-item:hover { background: var(--neutral-50); }
+    .col-chooser-item input[type="checkbox"] {
+      width: 14px; height: 14px;
+      accent-color: var(--accent-600);
+      cursor: pointer;
+    }
+    body.dark-mode .col-chooser-btn {
+      background: #21262d; border-color: #30363d; color: #8b949e;
+    }
+    body.dark-mode .col-chooser-dropdown {
+      background: #161b22; border-color: #30363d;
+    }
+    body.dark-mode .col-chooser-item { color: #c9d1d9; }
+    body.dark-mode .col-chooser-item:hover { background: #21262d; }
+
+    /* ===== INLINE FIELD VALIDATION ===== */
+    .field-hint {
+      font-size: var(--text-xs);
+      color: var(--neutral-500);
+      margin-top: var(--space-1);
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      min-height: 18px;
+    }
+
+    .field-hint.error { color: var(--status-danger); }
+    .field-hint.success { color: var(--status-success); }
+    .field-hint.warning { color: var(--status-warning); }
+
+    /* What's New badge in sidebar */
+    .whats-new-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      border-radius: var(--radius-full);
+      background: var(--accent-600);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 0 4px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .sidebar.collapsed .whats-new-badge {
+      display: none;
     }
     
     .search-bar {
@@ -2292,46 +2875,56 @@
       border-color: #21262d;
       color: #c9d1d9;
     }
+
+    body.dark-mode .sidebar-logo-mark {
+      background: linear-gradient(135deg, var(--accent-800), var(--accent-700));
+    }
+
+    body.dark-mode .sidebar-logo h1 { color: #e6edf3; }
+    body.dark-mode .logo-sub { color: #8b949e; }
+    body.dark-mode .nav-group-label { color: #6e7681; }
+    body.dark-mode .nav-item { color: #8b949e; }
+    body.dark-mode .nav-item:hover { background: #21262d; color: #c9d1d9; }
+    body.dark-mode .nav-item:hover i { color: #c9d1d9; }
+    body.dark-mode .nav-item.active { background: rgba(228,160,172,0.15); color: #f4a7b5; }
+    body.dark-mode .nav-item.active i { color: #f4a7b5; }
+    body.dark-mode .nav-item::after { background: #e6edf3; color: #161b22; }
+
+    body.dark-mode .breadcrumb-item a,
+    body.dark-mode .breadcrumb-item span { color: #6e7681; }
+    body.dark-mode .breadcrumb-sep { color: #30363d; }
+
+    body.dark-mode .density-toggle { background: #21262d; }
+    body.dark-mode .density-btn { color: #6e7681; }
+    body.dark-mode .density-btn.active { background: #30363d; color: #c9d1d9; }
+
+    body.dark-mode .whats-new-badge { background: var(--accent-700); }
     
     body.dark-mode .top-bar {
       background: rgba(22,27,34,0.9);
       border-color: #21262d;
     }
-    
+
     body.dark-mode .input-field,
     body.dark-mode .select-field {
       background: #0d1117;
       border-color: #30363d;
       color: #c9d1d9;
     }
-    
+
     body.dark-mode .table th {
       background: #0d1117;
       color: #8b949e;
       border-color: #21262d;
     }
-    
+
     body.dark-mode .table td {
       color: #c9d1d9;
       border-color: #21262d;
     }
-    
+
     body.dark-mode .table tbody tr:hover {
       background: #21262d;
-    }
-    
-    body.dark-mode .nav-item {
-      color: #8b949e;
-    }
-    
-    body.dark-mode .nav-item:hover {
-      background: #21262d;
-      color: #c9d1d9;
-    }
-    
-    body.dark-mode .nav-item.active {
-      background: rgba(228,160,172,0.15);
-      color: #f4a7b5;
     }
     
     body.dark-mode .btn-secondary {
@@ -2417,7 +3010,7 @@
     @media (max-width: 768px) {
       .sidebar {
         transform: translateX(-100%);
-        width: 280px;
+        width: 260px;
       }
       
       .sidebar.mobile-open {
@@ -2530,7 +3123,47 @@
       }
     }
     
-    /* ===== REDUCED MOTION ===== */
+    /* ===== TOP BAR RESPONSIVE BREAKPOINTS ===== */
+    @media (max-width: 900px) {
+      .top-bar {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+      }
+      .top-bar > div:first-child {
+        max-width: 100% !important;
+        flex: 1 1 200px;
+      }
+      .top-bar .topbar-right {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+      .topbar-region-label {
+        display: none;
+      }
+    }
+    @media (max-width: 640px) {
+      .top-bar {
+        padding: var(--space-2);
+      }
+      .autosave-indicator {
+        display: none !important;
+      }
+      .topbar-right {
+        gap: var(--space-1) !important;
+      }
+      .top-bar .kbd {
+        display: none;
+      }
+    }
+    /* ===== ONBOARDING TOUR — enhanced backdrop ===== */
+    .tour-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 9990;
+      pointer-events: none;
+      background: rgba(26, 38, 52, 0.55);
+    }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -2539,9 +3172,427 @@
         scroll-behavior: auto !important;
       }
     }
+
+    /* ===== AUTH SYSTEM STYLES ===== */
+    #authOverlay {
+      position: fixed; inset: 0; z-index: 99999;
+      display: flex; flex-direction: column;
+      background: var(--primary-900);
+      overflow-y: auto;
+    }
+    #authOverlay.hidden { display: none; }
+
+    /* Landing page */
+    .landing-hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(145deg, var(--primary-900) 0%, #0d1f35 60%, #1a0a10 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .landing-hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 60% 40%, rgba(180,58,72,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .landing-grid-bg {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+    .landing-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 24px 48px;
+      position: relative; z-index: 2;
+    }
+    .landing-logo {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .landing-logo-mark {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent-600), var(--accent-500));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.2rem; color: white;
+      box-shadow: 0 4px 16px rgba(180,58,72,0.4);
+    }
+    .landing-logo-text { color: white; }
+    .landing-logo-text h2 { font-size: 1.1rem; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+    .landing-logo-text span { font-size: 0.7rem; opacity: 0.5; letter-spacing: 0.08em; text-transform: uppercase; }
+    .landing-nav-actions { display: flex; gap: 12px; align-items: center; }
+    .btn-landing-ghost {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.8); padding: 8px 20px; border-radius: var(--radius-full);
+      font-size: var(--text-sm); font-weight: 500; cursor: pointer;
+      transition: all 0.2s; font-family: var(--font-sans);
+    }
+    .btn-landing-ghost:hover { background: rgba(255,255,255,0.12); color: white; }
+    .btn-landing-primary {
+      background: linear-gradient(135deg, var(--accent-600), var(--accent-500));
+      border: none; color: white; padding: 8px 20px; border-radius: var(--radius-full);
+      font-size: var(--text-sm); font-weight: 600; cursor: pointer;
+      transition: all 0.2s; font-family: var(--font-sans);
+      box-shadow: 0 4px 14px rgba(180,58,72,0.35);
+    }
+    .btn-landing-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(180,58,72,0.45); }
+    .landing-hero-content {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; text-align: center;
+      padding: 60px 24px 80px; position: relative; z-index: 2;
+    }
+    .landing-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(180,58,72,0.15); border: 1px solid rgba(180,58,72,0.3);
+      color: var(--accent-400); border-radius: var(--radius-full);
+      padding: 5px 14px; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 28px;
+    }
+    .landing-title {
+      font-size: clamp(2.2rem, 6vw, 4rem); font-weight: 800;
+      color: white; line-height: 1.1; letter-spacing: -0.03em;
+      margin-bottom: 20px; max-width: 700px;
+    }
+    .landing-title span { 
+      background: linear-gradient(135deg, var(--accent-400), #e07a86);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .landing-sub {
+      font-size: 1.05rem; color: rgba(255,255,255,0.55);
+      max-width: 500px; line-height: 1.7; margin-bottom: 44px;
+    }
+    .landing-cta-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .btn-landing-cta {
+      background: linear-gradient(135deg, var(--accent-600), var(--accent-500));
+      border: none; color: white; padding: 14px 32px; border-radius: var(--radius-full);
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; font-family: var(--font-sans);
+      box-shadow: 0 6px 24px rgba(180,58,72,0.4);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-landing-cta:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(180,58,72,0.5); }
+    .btn-landing-cta-ghost {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.75); padding: 14px 32px; border-radius: var(--radius-full);
+      font-size: 1rem; font-weight: 500; cursor: pointer;
+      transition: all 0.2s; font-family: var(--font-sans);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-landing-cta-ghost:hover { background: rgba(255,255,255,0.1); color: white; }
+    .landing-stats {
+      display: flex; gap: 40px; margin-top: 64px; justify-content: center; flex-wrap: wrap;
+    }
+    .landing-stat { text-align: center; }
+    .landing-stat-val { font-size: 1.8rem; font-weight: 800; color: white; line-height: 1; }
+    .landing-stat-label { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .landing-features {
+      background: rgba(255,255,255,0.03); border-top: 1px solid rgba(255,255,255,0.07);
+      padding: 64px 48px; display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px;
+      position: relative; z-index: 2;
+    }
+    .landing-feature { text-align: center; }
+    .landing-feature-icon {
+      width: 48px; height: 48px; border-radius: 12px; margin: 0 auto 14px;
+      background: rgba(180,58,72,0.15); border: 1px solid rgba(180,58,72,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; color: var(--accent-400);
+    }
+    .landing-feature h4 { color: white; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+    .landing-feature p { color: rgba(255,255,255,0.4); font-size: 0.8rem; line-height: 1.6; }
+
+    /* Auth forms (login / signup) */
+    .auth-screen {
+      min-height: 100vh; display: none;
+      align-items: center; justify-content: center;
+      background: linear-gradient(145deg, var(--primary-900) 0%, #0d1f35 60%, #1a0a10 100%);
+      padding: 24px; position: relative;
+    }
+    .auth-screen.active { display: flex; }
+    .auth-screen::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 40%, rgba(180,58,72,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .auth-card {
+      background: rgba(255,255,255,0.04); backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.09); border-radius: 20px;
+      padding: 40px; width: 100%; max-width: 420px;
+      position: relative; z-index: 2;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+      animation: spring-slide 0.4s var(--ease-spring) both;
+    }
+    .auth-card-logo {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 32px; justify-content: center;
+    }
+    .auth-card-logo-mark {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: linear-gradient(135deg, var(--accent-600), var(--accent-500));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.1rem; color: white;
+    }
+    .auth-card-logo span { color: white; font-weight: 700; font-size: 1rem; }
+    .auth-title { color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; text-align: center; }
+    .auth-subtitle { color: rgba(255,255,255,0.45); font-size: 0.85rem; text-align: center; margin-bottom: 28px; }
+    .auth-field { margin-bottom: 16px; }
+    .auth-label { display: block; color: rgba(255,255,255,0.65); font-size: 0.8rem; font-weight: 500; margin-bottom: 6px; }
+    .auth-input {
+      width: 100%; padding: 11px 14px; border-radius: 10px;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+      color: white; font-size: 0.9rem; font-family: var(--font-sans);
+      transition: all 0.2s; outline: none;
+    }
+    .auth-input::placeholder { color: rgba(255,255,255,0.25); }
+    .auth-input:focus { border-color: var(--accent-500); background: rgba(255,255,255,0.09); box-shadow: 0 0 0 3px rgba(180,58,72,0.2); }
+    .auth-input.error { border-color: var(--status-danger); }
+    .auth-error {
+      background: rgba(220,53,69,0.15); border: 1px solid rgba(220,53,69,0.3);
+      color: #f87171; border-radius: 8px; padding: 10px 14px;
+      font-size: 0.82rem; margin-bottom: 16px; display: none;
+    }
+    .auth-error.show { display: block; animation: fadeIn 0.2s ease both; }
+    .auth-btn {
+      width: 100%; padding: 12px; border-radius: 10px; border: none;
+      background: linear-gradient(135deg, var(--accent-600), var(--accent-500));
+      color: white; font-size: 0.95rem; font-weight: 600;
+      font-family: var(--font-sans); cursor: pointer;
+      transition: all 0.2s; margin-top: 8px;
+      box-shadow: 0 4px 16px rgba(180,58,72,0.35);
+    }
+    .auth-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(180,58,72,0.5); }
+    .auth-btn:active { transform: translateY(0); }
+    .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .auth-switch { text-align: center; margin-top: 20px; font-size: 0.83rem; color: rgba(255,255,255,0.4); }
+    .auth-switch a { color: var(--accent-400); cursor: pointer; font-weight: 500; text-decoration: none; }
+    .auth-switch a:hover { color: var(--accent-300); text-decoration: underline; }
+    .auth-back-btn {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 24px;
+      background: none; border: none; color: rgba(255,255,255,0.4);
+      font-size: 0.82rem; cursor: pointer; font-family: var(--font-sans);
+      padding: 0; transition: color 0.15s;
+    }
+    .auth-back-btn:hover { color: rgba(255,255,255,0.75); }
+    .auth-domain-hint {
+      font-size: 0.75rem; color: rgba(255,255,255,0.3);
+      margin-top: 4px; display: flex; align-items: center; gap: 4px;
+    }
+    .pw-wrapper { position: relative; }
+    .pw-toggle {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.35);
+      padding: 0; font-size: 0.85rem; transition: color 0.15s;
+    }
+    .pw-toggle:hover { color: rgba(255,255,255,0.7); }
+
+    /* Admin panel page */
+    .admin-user-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-radius: 10px;
+      background: var(--neutral-50); border: 1px solid var(--neutral-200);
+      margin-bottom: 8px; transition: background 0.15s;
+    }
+    .admin-user-row:hover { background: var(--neutral-100); }
+    .admin-user-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-600), var(--accent-500));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem; color: white; flex-shrink: 0;
+    }
+    .admin-user-info { flex: 1; min-width: 0; }
+    .admin-user-email { font-size: 0.88rem; font-weight: 500; color: var(--neutral-800); }
+    .admin-user-meta { font-size: 0.75rem; color: var(--neutral-400); margin-top: 2px; }
+    .badge-admin {
+      background: rgba(180,58,72,0.1); color: var(--accent-700);
+      border: 1px solid rgba(180,58,72,0.2); border-radius: var(--radius-full);
+      padding: 2px 8px; font-size: 0.7rem; font-weight: 600; flex-shrink: 0;
+    }
+    .badge-user {
+      background: var(--neutral-100); color: var(--neutral-500);
+      border: 1px solid var(--neutral-200); border-radius: var(--radius-full);
+      padding: 2px 8px; font-size: 0.7rem; font-weight: 500; flex-shrink: 0;
+    }
+
+    /* Logged-in user pill in top bar */
+    .auth-user-pill {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(180,58,72,0.08); border: 1px solid rgba(180,58,72,0.15);
+      border-radius: var(--radius-full); padding: 4px 12px 4px 6px;
+      cursor: pointer; transition: background 0.15s; position: relative;
+    }
+    .auth-user-pill:hover { background: rgba(180,58,72,0.14); }
+    .auth-user-avatar-sm {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-600), var(--accent-500));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.65rem; color: white; flex-shrink: 0;
+    }
+    .auth-user-pill-name { font-size: 0.75rem; font-weight: 500; color: var(--neutral-700); }
+    .auth-user-dropdown {
+      position: absolute; top: calc(100% + 8px); right: 0;
+      background: white; border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+      min-width: 200px; z-index: 999; overflow: hidden;
+      display: none; animation: fadeIn 0.15s ease both;
+    }
+    .auth-user-dropdown.open { display: block; }
+    .auth-user-dropdown-header {
+      padding: 12px 16px; border-bottom: 1px solid var(--neutral-100);
+      background: var(--neutral-50);
+    }
+    .auth-user-dropdown-email { font-size: 0.78rem; color: var(--neutral-500); word-break: break-all; }
+    .auth-dropdown-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; font-size: 0.85rem; color: var(--neutral-700);
+      cursor: pointer; transition: background 0.15s; border: none;
+      background: none; width: 100%; text-align: left; font-family: var(--font-sans);
+    }
+    .auth-dropdown-item:hover { background: var(--neutral-50); }
+    .auth-dropdown-item.danger { color: var(--status-danger); }
+    .auth-dropdown-item.danger:hover { background: rgba(220,53,69,0.05); }
   </style>
 </head>
 <body>
+
+  <!-- ===== AUTH OVERLAY ===== -->
+  <div id="authOverlay">
+
+    <!-- LANDING PAGE -->
+    <div id="landingPage" class="landing-hero">
+      <div class="landing-grid-bg"></div>
+      <nav class="landing-nav">
+        <div class="landing-logo">
+          <div class="landing-logo-mark">C</div>
+          <div class="landing-logo-text">
+            <h2>CCS Fuel System</h2>
+            <span>Enterprise Platform</span>
+          </div>
+        </div>
+        <div class="landing-nav-actions">
+          <button class="btn-landing-ghost" onclick="authShowLogin()">Sign In</button>
+          <button class="btn-landing-primary" onclick="authShowSignup()">Request Access</button>
+        </div>
+      </nav>
+      <div class="landing-hero-content">
+        <div class="landing-badge">
+          <i class="fa-regular fa-shield-check"></i>
+          CCS Zambia · Internal Platform
+        </div>
+        <h1 class="landing-title">CCS FUEL SYSTEM MANAGEMENT<br><span>FULLY AUTOMATED</span></h1>
+        <p class="landing-sub">Real-time fuel tracking, technician allocation, WhatsApp report parsing, and Excel automation — all in one secure platform for CCS Zambia operations.</p>
+        <div class="landing-cta-row">
+          <button class="btn-landing-cta" onclick="authShowLogin()">
+            <i class="fa-regular fa-arrow-right-to-bracket"></i> Sign In to System
+          </button>
+          <button class="btn-landing-cta-ghost" onclick="document.getElementById('landingFeatures').scrollIntoView({behavior:'smooth'})">
+            <i class="fa-regular fa-circle-info"></i> Learn More
+          </button>
+        </div>
+        <div class="landing-stats">
+          <div class="landing-stat"><div class="landing-stat-val">4</div><div class="landing-stat-label">Regions</div></div>
+          <div class="landing-stat"><div class="landing-stat-val">400+</div><div class="landing-stat-label">Sites</div></div>
+          <div class="landing-stat"><div class="landing-stat-val">Live</div><div class="landing-stat-label">Reporting</div></div>
+          <div class="landing-stat"><div class="landing-stat-val">100%</div><div class="landing-stat-label">Browser-Based</div></div>
+        </div>
+      </div>
+      <div class="landing-features" id="landingFeatures">
+        <div class="landing-feature">
+          <div class="landing-feature-icon"><i class="fa-regular fa-chart-line"></i></div>
+          <h4>Live Dashboard</h4>
+          <p>Real-time KPIs, leaderboards, and cycle summaries across all regions.</p>
+        </div>
+        <div class="landing-feature">
+          <div class="landing-feature-icon"><i class="fa-brands fa-whatsapp"></i></div>
+          <h4>WhatsApp Parser</h4>
+          <p>Paste field reports directly — technician data is parsed and entered automatically.</p>
+        </div>
+        <div class="landing-feature">
+          <div class="landing-feature-icon"><i class="fa-regular fa-file-excel"></i></div>
+          <h4>Excel Automation</h4>
+          <p>Write directly into .xlsx files without opening Excel — formulas and styles preserved.</p>
+        </div>
+        <div class="landing-feature">
+          <div class="landing-feature-icon"><i class="fa-regular fa-users"></i></div>
+          <h4>Technician Management</h4>
+          <p>Allocate fuel, track targets, and monitor performance across all technicians.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="auth-screen">
+      <div class="auth-card">
+        <button class="auth-back-btn" onclick="authShowLanding()"><i class="fa-regular fa-arrow-left"></i> Back to home</button>
+        <div class="auth-card-logo">
+          <div class="auth-card-logo-mark">C</div>
+          <span>CCS Fuel System</span>
+        </div>
+        <h2 class="auth-title">Welcome back</h2>
+        <p class="auth-subtitle">Sign in with your CCS Zambia account</p>
+        <div class="auth-error" id="loginError"></div>
+        <div class="auth-field">
+          <label class="auth-label">Email address</label>
+          <input type="email" class="auth-input" id="loginEmail" placeholder="you@ccszambia.com"
+            oninput="authClearError('login')" onkeydown="if(event.key==='Enter')doLogin()">
+          <div class="auth-domain-hint"><i class="fa-regular fa-lock"></i> Only @ccszambia.com emails permitted</div>
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Password</label>
+          <div class="pw-wrapper">
+            <input type="password" class="auth-input" id="loginPassword" placeholder="••••••••"
+              oninput="authClearError('login')" onkeydown="if(event.key==='Enter')doLogin()">
+            <button class="pw-toggle" type="button" onclick="authTogglePw('loginPassword',this)" tabindex="-1"><i class="fa-regular fa-eye"></i></button>
+          </div>
+        </div>
+        <button class="auth-btn" onclick="doLogin()" id="loginBtn"><i class="fa-regular fa-arrow-right-to-bracket"></i> Sign In</button>
+        <div class="auth-switch">Don't have an account? <a onclick="authShowSignup()">Request access</a></div>
+      </div>
+    </div>
+
+    <!-- SIGNUP SCREEN -->
+    <div id="signupScreen" class="auth-screen">
+      <div class="auth-card">
+        <button class="auth-back-btn" onclick="authShowLanding()"><i class="fa-regular fa-arrow-left"></i> Back to home</button>
+        <div class="auth-card-logo">
+          <div class="auth-card-logo-mark">C</div>
+          <span>CCS Fuel System</span>
+        </div>
+        <h2 class="auth-title">Create account</h2>
+        <p class="auth-subtitle">Use your official CCS Zambia email</p>
+        <div class="auth-error" id="signupError"></div>
+        <div class="auth-field">
+          <label class="auth-label">Email address</label>
+          <input type="email" class="auth-input" id="signupEmail" placeholder="you@ccszambia.com"
+            oninput="authClearError('signup')">
+          <div class="auth-domain-hint"><i class="fa-regular fa-lock"></i> Must be a @ccszambia.com address</div>
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Password</label>
+          <div class="pw-wrapper">
+            <input type="password" class="auth-input" id="signupPassword" placeholder="Min. 8 characters"
+              oninput="authClearError('signup')">
+            <button class="pw-toggle" type="button" onclick="authTogglePw('signupPassword',this)" tabindex="-1"><i class="fa-regular fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Confirm password</label>
+          <div class="pw-wrapper">
+            <input type="password" class="auth-input" id="signupConfirm" placeholder="Re-enter password"
+              oninput="authClearError('signup')" onkeydown="if(event.key==='Enter')doSignup()">
+            <button class="pw-toggle" type="button" onclick="authTogglePw('signupConfirm',this)" tabindex="-1"><i class="fa-regular fa-eye"></i></button>
+          </div>
+        </div>
+        <button class="auth-btn" onclick="doSignup()" id="signupBtn"><i class="fa-regular fa-user-plus"></i> Create Account</button>
+        <div class="auth-switch">Already have an account? <a onclick="authShowLogin()">Sign in</a></div>
+      </div>
+    </div>
+
+  </div>
+  <!-- ===== END AUTH OVERLAY ===== -->
+
   <!-- Developer Credit - Fixed Footer Position -->
   <div class="footer-status-bar">
     <div class="status-item">
@@ -2567,101 +3618,125 @@
 
   <div class="app-container">
     <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
       <div class="sidebar-logo">
-        <h1 class="text-2xl font-bold tracking-tight">CCS</h1>
+        <div class="sidebar-logo-mark">C</div>
+        <div class="sidebar-logo-text">
+          <h1>CCS Fuel</h1>
+          <div class="logo-sub">Enterprise System</div>
+        </div>
       </div>
       
-      <div class="nav-section">
-        <button class="nav-item" onclick="setPage('dashboard', this)">
+      <!-- MAIN NAV GROUP -->
+      <div class="nav-group" role="group" aria-label="Main pages">
+        <div class="nav-group-label" aria-hidden="true">Main</div>
+        <button class="nav-item" onclick="setPage('dashboard', this)" data-tooltip="Dashboard">
           <i class="fa-regular fa-gauge-high"></i>
           <span>Dashboard</span>
         </button>
-        <button class="nav-item active" onclick="setPage('daily', this)">
+        <button class="nav-item active" onclick="setPage('daily', this)" data-tooltip="Daily">
           <i class="fa-regular fa-calendar"></i>
           <span>Daily</span>
         </button>
-        <button class="nav-item" onclick="setPage('orders', this)">
+        <button class="nav-item" onclick="setPage('orders', this)" data-tooltip="Orders">
           <i class="fa-regular fa-file-lines"></i>
           <span>Orders</span>
         </button>
-        <button class="nav-item" onclick="setPage('regions', this)">
+        <button class="nav-item" onclick="setPage('regions', this)" data-tooltip="Regions">
           <i class="fa-regular fa-building"></i>
           <span>Regions</span>
         </button>
-        <button class="nav-item" onclick="setPage('reports', this)">
+        <button class="nav-item" onclick="setPage('reports', this)" data-tooltip="Reports">
           <i class="fa-regular fa-chart-bar"></i>
           <span>Reports</span>
         </button>
-        <button class="nav-item" onclick="setPage('leaderboard', this)">
+        <button class="nav-item" onclick="setPage('leaderboard', this)" data-tooltip="Leaderboard">
           <i class="fa-regular fa-trophy"></i>
           <span>Leaderboard</span>
         </button>
-        <button class="nav-item" onclick="setPage('cycles', this)">
+        <button class="nav-item" onclick="setPage('cycles', this)" data-tooltip="Cycle History">
           <i class="fa-regular fa-rotate"></i>
           <span>Cycle History</span>
         </button>
-        <button class="nav-item" onclick="setPage('technicians', this)">
+        <button class="nav-item" onclick="setPage('technicians', this)" data-tooltip="Tech Manager">
           <i class="fa-regular fa-id-card"></i>
           <span>Tech Manager</span>
         </button>
-        <button class="nav-item" onclick="setPage('automation', this)">
+        <button class="nav-item" onclick="setPage('automation', this)" data-tooltip="Automation">
           <i class="fa-regular fa-robot"></i>
           <span>Automation</span>
         </button>
-        <button class="nav-item" onclick="openWhatsAppImport()" style="color:var(--status-info);border-left:3px solid var(--status-info);background:var(--status-info-bg);">
+      </div>
+
+      <!-- QUICK ACTIONS GROUP -->
+      <div class="nav-group" role="group" aria-label="Quick actions">
+        <div class="nav-group-label" aria-hidden="true">Quick Actions</div>
+        <button class="nav-item" onclick="openWhatsAppImport()" data-tooltip="Import Orders">
           <i class="fa-brands fa-whatsapp"></i>
           <span>Import Orders</span>
         </button>
-        <button class="nav-item" onclick="openDailyAutoImport()" style="color:var(--status-success);border-left:3px solid var(--status-success);background:var(--status-success-bg);">
+        <button class="nav-item" onclick="openDailyAutoImport()" data-tooltip="Auto Daily Entry">
           <i class="fa-regular fa-file-excel"></i>
           <span>Auto Daily Entry</span>
         </button>
-        <button class="nav-item" onclick="openWatchedPersonsModal()" style="color:var(--status-warning);border-left:3px solid var(--status-warning);background:var(--status-warning-bg);">
+        <button class="nav-item" onclick="openWatchedPersonsModal()" data-tooltip="Watch List">
           <i class="fa-regular fa-eye"></i>
           <span>Watch List</span>
         </button>
       </div>
 
-      <div class="mt-auto pt-6 flex flex-col gap-1">
-        <button class="nav-item" onclick="openEndCycleModal()" style="background:rgba(196,30,58,0.08);color:var(--accent-600);border:1px dashed var(--accent-400);border-radius:var(--radius-md);">
+      <!-- BOTTOM CONTROLS - push to bottom -->
+      <div style="margin-top:auto; padding-top: var(--space-4); border-top: 1px solid var(--neutral-200); display:flex; flex-direction:column; gap:2px;">
+        <button class="nav-item" onclick="openEndCycleModal()" data-tooltip="End Cycle" style="color:var(--accent-600);">
           <i class="fa-regular fa-flag-checkered"></i>
           <span>End Cycle</span>
         </button>
-        <div class="nav-item" onclick="toggleDarkMode()" id="darkModeBtn">
+        <button class="nav-item" id="sidebarAdminBtn" onclick="setPage('admin',this)" data-tooltip="Admin Panel" style="display:none;">
+          <i class="fa-regular fa-shield-halved"></i>
+          <span>Admin Panel</span>
+        </button>
+        <button class="nav-item" onclick="openWhatsNewModal()" data-tooltip="What's New">
+          <i class="fa-regular fa-sparkles"></i>
+          <span>What's New</span>
+          <span class="whats-new-badge">10</span>
+        </button>
+        <button class="nav-item" onclick="startOnboardingTour()" data-tooltip="Help Tour">
+          <i class="fa-regular fa-circle-question"></i>
+          <span>Help Tour</span>
+        </button>
+        <div class="nav-item" onclick="toggleDarkMode()" id="darkModeBtn" data-tooltip="Dark Mode">
           <i class="fa-regular fa-moon"></i>
           <span>Dark Mode</span>
         </div>
-        <div class="nav-item" onclick="toggleSidebar()">
-          <i class="fa-regular fa-chevron-left"></i>
+        <div class="nav-item" onclick="toggleSidebar()" data-tooltip="Expand" id="sidebarToggleBtn">
+          <i class="fa-regular fa-chevron-left" id="sidebarToggleIcon"></i>
           <span>Collapse</span>
         </div>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content" id="mainContent">
-      <!-- Top Bar -->
+    <main class="main-content" id="mainContent" role="main" aria-label="Page content">
+      <!-- Top Bar - Streamlined -->
       <div class="top-bar">
-        <div style="position:relative;flex:1;min-width:0;max-width:480px;">
-          <div class="search-bar">
+        <!-- Left: Search -->
+        <div style="position:relative;flex:1;min-width:0;max-width:420px;">
+          <div class="search-bar" onclick="openCommandPalette()" style="cursor:pointer;" title="Search or press Ctrl+K">
             <i class="fa-regular fa-magnifying-glass"></i>
-            <input type="text" placeholder="Search orders, technicians..." id="globalSearch" oninput="handleGlobalSearch()" autocomplete="off">
-     <span class="kbd">
-  <img src="./icons8-search.svg" alt="search" width="16" height="16" />
-
-</span>
+            <input type="text" placeholder="Search orders, technicians… (Ctrl+K)" id="globalSearch" oninput="handleGlobalSearch()" autocomplete="off">
+            <span class="kbd" style="font-size:11px;opacity:0.6;white-space:nowrap;">Ctrl K</span>
           </div>
           <div id="searchDropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:white;border:1px solid var(--neutral-200);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:999;max-height:380px;overflow-y:auto;"></div>
         </div>
 
-        <div class="flex items-center gap-3">
+        <!-- Right: Notifications + User -->
+        <div class="flex items-center gap-3 topbar-right">
           <!-- Notifications Bell -->
-          <div class="notif-bell btn btn-icon btn-ghost" id="notifBellBtn" onclick="toggleNotifications()" style="position:relative;">
+          <div class="notif-bell btn btn-icon btn-ghost" id="notifBellBtn" onclick="toggleNotifications()" style="position:relative;" aria-label="Notifications" role="button" tabindex="0">
             <i class="fa-regular fa-bell"></i>
             <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
           </div>
-          <div class="notif-dropdown" id="notifDropdown">
+          <div class="notif-dropdown" id="notifDropdown" role="dialog" aria-label="Notifications panel">
             <div class="p-3 border-b border-neutral-100 flex items-center justify-between">
               <span class="font-bold text-sm">Notifications</span>
               <button class="btn btn-ghost btn-sm" onclick="clearNotifications()">Clear all</button>
@@ -2669,33 +3744,51 @@
             <div id="notifList"><div class="p-6 text-center text-neutral-400 text-sm">No notifications</div></div>
           </div>
 
-          <!-- Autosave Indicator -->
-          <div class="autosave-indicator" id="autosaveIndicator">
+          <!-- Autosave Indicator (compact) -->
+          <div class="autosave-indicator" id="autosaveIndicator" aria-live="polite">
             <div class="autosave-dot"></div>
             <span id="autosaveText">Saved</span>
           </div>
 
-          <span class="badge badge-info" id="backupIndicator">
-            <i class="fa-regular fa-cloud"></i>
-            <span>Backed up today</span>
-          </span>
-          
-          <div class="flex items-center gap-2">
-            <span class="text-sm">Region:</span>
-            <div class="select-wrapper" style="width: 160px;">
-              <select class="select-field" id="regionSelect" onchange="changeRegion()"></select>
+          <!-- User / Region pill -->
+          <div style="display:flex;align-items:center;gap:var(--space-2);background:var(--neutral-100);border-radius:var(--radius-full);padding:4px 4px 4px 12px;">
+            <span style="font-size:var(--text-xs);font-weight:500;color:var(--neutral-600);white-space:nowrap;" class="topbar-region-label">Region</span>
+            <div class="select-wrapper" style="width:150px;">
+              <select class="select-field" id="regionSelect" onchange="changeRegion()" style="background:white;border-radius:var(--radius-full);padding:6px 32px 6px 12px;font-size:var(--text-xs);"></select>
             </div>
           </div>
 
-          <!-- Help Tooltip -->
-          <div class="help-tooltip">
-            <i class="fa-regular fa-circle-question"></i>
-            <div class="tooltip-content">
-              <h4>Keyboard Shortcuts</h4>
-              <p>K - Search<br>S - Save<br>ESC - Close<br>/ - All shortcuts</p>
+          <!-- Logged-in user pill -->
+          <div class="auth-user-pill" id="authUserPill" onclick="toggleAuthUserDropdown()">
+            <div class="auth-user-avatar-sm" id="authUserAvatarSm">?</div>
+            <span class="auth-user-pill-name" id="authUserPillName">User</span>
+            <i class="fa-regular fa-chevron-down" style="font-size:0.6rem;color:var(--neutral-400);margin-left:2px;"></i>
+            <div class="auth-user-dropdown" id="authUserDropdown">
+              <div class="auth-user-dropdown-header">
+                <div style="font-size:0.8rem;font-weight:600;color:var(--neutral-800);" id="authDropdownName">—</div>
+                <div class="auth-user-dropdown-email" id="authDropdownEmail">—</div>
+              </div>
+              <button class="auth-dropdown-item" onclick="setPage('admin',null);closeAuthUserDropdown();" id="authAdminMenuItem" style="display:none;">
+                <i class="fa-regular fa-shield-halved"></i> Admin Panel
+              </button>
+              <button class="auth-dropdown-item danger" onclick="doLogout()">
+                <i class="fa-regular fa-arrow-right-from-bracket"></i> Sign Out
+              </button>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Breadcrumb Row -->
+      <div class="breadcrumb" id="pageBreadcrumb" aria-label="Breadcrumb">
+        <div class="breadcrumb-item">
+          <span onclick="setPage('dashboard',null)" style="cursor:pointer;"><i class="fa-regular fa-house" style="font-size:11px;"></i></span>
+        </div>
+        <span class="breadcrumb-sep"><i class="fa-regular fa-chevron-right" style="font-size:9px;"></i></span>
+        <div class="breadcrumb-item current" id="breadcrumbCurrent">
+          <span>Daily</span>
+        </div>
+        <span style="margin-left:auto;font-size:var(--text-xs);color:var(--neutral-400);" id="breadcrumbRegionPill"></span>
       </div>
 
       <!-- Dynamic Page Content -->
@@ -2948,12 +4041,12 @@ Example:
         </button>
       </div>
       <div class="modal-body">
-        <div class="card mb-4" style="background:var(--accent-50);border:1px solid var(--accent-200);">
+        <div class="card mb-4" style="background:#fff8f8;border:1px solid var(--status-danger);border-left:4px solid var(--status-danger);">
           <div class="flex items-center gap-3">
-            <span style="font-size:2rem;">⚠️</span>
+            <span style="font-size:1.75rem;">⚠️</span>
             <div>
-              <div class="font-semibold" style="color:var(--accent-700);">This action will archive all current data</div>
-              <div class="text-sm mt-1" style="color:var(--neutral-600);">Orders, daily logs, and allocations will be saved to Cycle History. The new cycle will start completely fresh with the same regions and technicians.</div>
+              <div class="font-semibold" style="color:var(--status-danger);">This action is irreversible</div>
+              <div class="text-sm mt-1" style="color:var(--neutral-600);">Orders, daily logs, and allocations will be archived to Cycle History. The new cycle will start fresh with the same regions and technicians.</div>
             </div>
           </div>
         </div>
@@ -2963,11 +4056,18 @@ Example:
           <input type="text" class="input-field" id="newCycleName" placeholder="e.g. FEBRUARY CYCLE" style="text-transform:uppercase;font-weight:600;font-size:1rem;letter-spacing:0.03em;">
           <p class="text-xs mt-1" style="color:var(--neutral-500);">Give the new cycle a clear name so it's easy to identify later.</p>
         </div>
+        <!-- Destructive confirmation -->
+        <div class="danger-confirm-wrap">
+          <p class="text-sm font-semibold" style="color:var(--neutral-700);">To confirm, type the current cycle name below:</p>
+          <div class="confirm-phrase" id="endCycleConfirmPhrase">INITIAL CYCLE</div>
+          <input type="text" class="danger-confirm-input" id="endCycleConfirmInput" placeholder="Type cycle name to confirm…" oninput="checkEndCycleConfirm()" autocomplete="off">
+          <div class="field-hint" id="endCycleConfirmHint" style="margin-top:6px;"></div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('endCycleModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="confirmEndCycle()" style="background:linear-gradient(135deg,var(--accent-800),var(--accent-600));">
-          <i class="fa-regular fa-flag-checkered"></i> End Cycle & Start New
+        <button class="btn btn-primary" id="endCycleConfirmBtn" onclick="confirmEndCycle()" disabled style="background:linear-gradient(135deg,var(--accent-800),var(--accent-600));opacity:0.5;cursor:not-allowed;">
+          <i class="fa-regular fa-flag-checkered"></i> End Cycle &amp; Start New
         </button>
       </div>
     </div>
@@ -3027,6 +4127,69 @@ Example:
         <button class="btn btn-primary" onclick="saveCycleEdits()">
           <i class="fa-regular fa-floppy-disk"></i> Save All Changes
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== COMMAND PALETTE ===== -->
+  <div class="cmd-overlay" id="cmdOverlay" role="dialog" aria-modal="true" aria-label="Command palette">
+    <div class="cmd-palette" id="cmdPalette">
+      <div class="cmd-input-wrap">
+        <i class="fa-regular fa-magnifying-glass"></i>
+        <input type="text" class="cmd-input" id="cmdInput" placeholder="Search pages, actions, technicians…" autocomplete="off" aria-label="Command palette search">
+        <span class="cmd-kbd-hint"><span class="kbd" style="font-size:10px;">ESC</span> to close</span>
+      </div>
+      <div class="cmd-body" id="cmdBody" role="listbox"></div>
+      <div class="cmd-footer">
+        <span class="cmd-footer-hint"><span class="kbd" style="font-size:10px;">↑↓</span> navigate</span>
+        <span class="cmd-footer-hint"><span class="kbd" style="font-size:10px;">↵</span> select</span>
+        <span class="cmd-footer-hint"><span class="kbd" style="font-size:10px;">Ctrl K</span> toggle</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ONBOARDING TOUR ===== -->
+  <div class="tour-backdrop" id="tourBackdrop" style="display:none;">
+    <div class="tour-spotlight" id="tourSpotlight"></div>
+  </div>
+  <div class="tour-tooltip" id="tourTooltip" style="display:none;">
+    <div class="tour-step-indicator" id="tourStepIndicator">Step 1 of 6</div>
+    <div class="tour-title" id="tourTitle"></div>
+    <div class="tour-desc" id="tourDesc"></div>
+    <div class="tour-actions">
+      <button class="btn btn-ghost btn-sm" onclick="endTour()">Skip tour</button>
+      <div style="display:flex;gap:var(--space-2);">
+        <button class="btn btn-secondary btn-sm" id="tourPrevBtn" onclick="tourPrev()">Back</button>
+        <button class="btn btn-primary btn-sm" id="tourNextBtn" onclick="tourNext()">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== WHAT'S NEW MODAL ===== -->
+  <div class="modal-overlay" id="whatsNewModal">
+    <div class="modal-container" style="max-width:520px;">
+      <div class="modal-header">
+        <h3 class="text-xl font-semibold"><i class="fa-regular fa-sparkles" style="color:var(--accent-600);margin-right:8px;"></i>What's New</h3>
+        <button class="btn btn-icon btn-ghost" onclick="closeModal('whatsNewModal')"><i class="fa-regular fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="padding:0;">
+        <div style="padding:var(--space-5) var(--space-6);">
+          <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-5);">
+            <span class="badge badge-success">Latest</span>
+            <span class="text-sm font-semibold">v2.0 — UI Redesign</span>
+            <span class="text-xs" style="color:var(--neutral-400);margin-left:auto;">${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+            <div style="display:flex;gap:var(--space-3);"><div style="width:28px;height:28px;border-radius:var(--radius-md);background:var(--accent-100);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-regular fa-sidebar" style="color:var(--accent-600);font-size:12px;"></i></div><div><div class="font-semibold text-sm">Improved Sidebar Navigation</div><div class="text-xs" style="color:var(--neutral-500);margin-top:2px;">Navigation grouped into Main and Quick Actions with tooltip labels when collapsed.</div></div></div>
+            <div style="display:flex;gap:var(--space-3);"><div style="width:28px;height:28px;border-radius:var(--radius-md);background:var(--status-info-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-regular fa-magnifying-glass" style="color:var(--status-info);font-size:12px;"></i></div><div><div class="font-semibold text-sm">Command Palette (Ctrl+K)</div><div class="text-xs" style="color:var(--neutral-500);margin-top:2px;">Quick access to any page, action, or search result from anywhere in the app.</div></div></div>
+            <div style="display:flex;gap:var(--space-3);"><div style="width:28px;height:28px;border-radius:var(--radius-md);background:var(--status-success-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-regular fa-shield" style="color:var(--status-success);font-size:12px;"></i></div><div><div class="font-semibold text-sm">Safer End Cycle Confirmation</div><div class="text-xs" style="color:var(--neutral-500);margin-top:2px;">Now requires typing the cycle name before confirming — prevents accidental data loss.</div></div></div>
+            <div style="display:flex;gap:var(--space-3);"><div style="width:28px;height:28px;border-radius:var(--radius-md);background:var(--status-warning-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-regular fa-map-pin" style="color:var(--status-warning);font-size:12px;"></i></div><div><div class="font-semibold text-sm">Breadcrumb Navigation</div><div class="text-xs" style="color:var(--neutral-500);margin-top:2px;">Page location and region always visible below the top bar.</div></div></div>
+            <div style="display:flex;gap:var(--space-3);"><div style="width:28px;height:28px;border-radius:var(--radius-md);background:var(--neutral-100);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-regular fa-table-columns" style="color:var(--neutral-600);font-size:12px;"></i></div><div><div class="font-semibold text-sm">Table Density Toggle</div><div class="text-xs" style="color:var(--neutral-500);margin-top:2px;">Switch between Compact, Default and Comfortable row density in data tables.</div></div></div>
+          </div>
+        </div>
+        <div style="padding:var(--space-4) var(--space-6);background:var(--neutral-50);border-top:1px solid var(--neutral-200);">
+          <button class="btn btn-secondary btn-sm" onclick="startOnboardingTour();closeModal('whatsNewModal')"><i class="fa-regular fa-circle-play"></i> Take a quick tour</button>
+        </div>
       </div>
     </div>
   </div>
@@ -3756,6 +4919,16 @@ Example:
       overlay.classList.add('active');
       overlay._triggerEl = document.activeElement;
 
+      // Set ARIA dialog attributes
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      // Try to find a heading to use as the accessible label
+      const heading = overlay.querySelector('h2, h3, h4, [id$="Title"], [id$="title"]');
+      if (heading) {
+        if (!heading.id) heading.id = modalId + '_label';
+        overlay.setAttribute('aria-labelledby', heading.id);
+      }
+
       requestAnimationFrame(() => {
         const focusable = overlay.querySelectorAll(
           'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -3878,13 +5051,21 @@ Example:
 
     // ===== PAGE TRANSITION SYSTEM =====
     function setPage(page, el) {
-      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-      if (el) el.classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        item.removeAttribute('aria-current');
+      });
+      if (el) {
+        el.classList.add('active');
+        el.setAttribute('aria-current', 'page');
+      }
+      if (typeof updateBreadcrumb === 'function') updateBreadcrumb(page);
       renderPageWithTransition(page);
     }
 
     function renderPageWithTransition(page) {
       currentPage = page;
+      if (typeof updateBreadcrumb === 'function') updateBreadcrumb(page);
       const content = document.getElementById('pageContent');
       
       if (content.children.length > 0 && !content.classList.contains('page-entering')) {
@@ -3919,6 +5100,7 @@ Example:
           case 'cycles':       renderCyclesPage(container); break;
           case 'technicians':  renderTechniciansPage(container); break;
           case 'automation':   renderAutomationPage(container); break;
+          case 'admin':        renderAdminPage(container); break;
         }
         
         container.classList.add('page-entering');
@@ -4524,7 +5706,11 @@ Example:
         <div class="card">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold">Supply Log</h3>
-            <span class="badge badge-info" id="entryCount">0 entries</span>
+            <div class="flex items-center gap-2">
+              <span class="badge badge-info" id="entryCount">0 entries</span>
+              <span id="dailyDensityToggle"></span>
+              <span id="dailyColChooser"></span>
+            </div>
           </div>
           <div id="dailyLogContainer"></div>
         </div>
@@ -4537,6 +5723,11 @@ Example:
 
       loadDailyLog();
       renderDailyHistory();
+      const dtEl = document.getElementById('dailyDensityToggle');
+      if (dtEl) dtEl.innerHTML = renderDensityToggle();
+      const dcEl = document.getElementById('dailyColChooser');
+      if (dcEl) dcEl.innerHTML = renderColChooser('daily');
+      setTimeout(() => { applyColVisibility('daily'); updateColChooserBtn('daily'); }, 50);
     }
 
     function loadDailyLog() {
@@ -4626,21 +5817,23 @@ Example:
             </span>
             ${techAvatarHtml(entry.technician, `style="width:34px;height:34px;font-size:0.8rem;flex-shrink:0;"`)}
             <div style="flex:1;min-width:0;">
-              <div style="font-weight:700;font-size:0.85rem;color:var(--neutral-900);display:flex;align-items:center;gap:6px;">
+              <div data-col="daily-technician" style="font-weight:700;font-size:0.85rem;color:var(--neutral-900);display:flex;align-items:center;gap:6px;">
                 ${entry.technician}
                 ${entry.autoImported ? `<span style="font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:var(--radius-full);background:var(--status-info-bg);color:var(--status-info);border:1px solid var(--status-info);letter-spacing:0.04em;">🤖 AUTO</span>` : ''}
               </div>
               <div style="font-size:0.72rem;color:var(--neutral-500);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                ${isUnalloc
-                  ? `<span style="color:var(--status-warning);font-weight:600;">⚠ Unallocated</span>${entry.comment ? ' · ' + entry.comment : ''}`
-                  : `<i class="fa-regular fa-file-lines" style="margin-right:3px;"></i>${entry.orderNo}${entry.comment ? ' · 💬 ' + entry.comment : ''}`
-                }
-                ${entry.siteId ? `<span style="margin-left:4px;padding:0 4px;background:var(--neutral-100);border-radius:2px;font-family:var(--font-mono);font-size:0.65rem;">${entry.siteId}</span>` : ''}
+                <span data-col="daily-order">${isUnalloc
+                  ? `<span style="color:var(--status-warning);font-weight:600;">⚠ Unallocated</span>`
+                  : `<i class="fa-regular fa-file-lines" style="margin-right:3px;"></i>${entry.orderNo}`
+                }</span>
+                <span data-col="daily-comment">${entry.comment ? ' · 💬 ' + entry.comment : ''}</span>
+                <span data-col="daily-site">${entry.siteId ? `<span style="margin-left:4px;padding:0 4px;background:var(--neutral-100);border-radius:2px;font-family:var(--font-mono);font-size:0.65rem;">${entry.siteId}</span>` : ''}</span>
                 ${entry.dgHoursUsed > 0 ? `<span style="margin-left:4px;color:var(--status-info);">⚡ ${entry.dgHoursUsed}h</span>` : ''}
                 ${entry.dieselConsumed > 0 ? `<span style="margin-left:4px;color:var(--status-warning);">🔥 ${entry.dieselConsumed}L used</span>` : ''}
               </div>
             </div>
-            <span class="inline-editable" title="Click to edit"
+            <span data-col="daily-type" class="badge ${isUnalloc ? 'badge-warning' : 'badge-success'}" style="font-size:0.65rem;flex-shrink:0;">${isUnalloc ? 'Unalloc' : 'Alloc'}</span>
+            <span data-col="daily-supplied" class="inline-editable" title="Click to edit"
               onclick="startInlineEdit(this,'${dateVal}',${origIdx})"
               style="font-family:var(--font-mono);font-weight:700;font-size:0.9rem;
                      padding:4px 10px;border-radius:var(--radius-full);cursor:pointer;
@@ -4670,6 +5863,7 @@ Example:
           </div>
         </div>
         <div id="supplyLogRows">${rowsHtml}</div>`;
+      applyColVisibility('daily');
     }
 
     function sortDailyLog(field) {
@@ -5355,17 +6549,23 @@ Example:
           <div id="orderForm" style="display: none;">
             <div class="grid grid-cols-2 gap-4">
               <div class="input-group">
-                <input type="text" class="input-field" id="orderNo" placeholder=" ">
+                <input type="text" class="input-field" id="orderNo" placeholder=" "
+                  data-validate="order-no" oninput="liveValidate(this)">
                 <label class="input-label">Order Number</label>
+                <div class="field-hint" id="orderNoHint"></div>
               </div>
               <div class="input-group">
-                <input type="text" class="input-field" id="vehiclePlate" placeholder=" " list="knownPlatesList">
+                <input type="text" class="input-field" id="vehiclePlate" placeholder=" " list="knownPlatesList"
+                  data-validate="plate" oninput="liveValidate(this)">
                 <label class="input-label">Vehicle Plate</label>
+                <div class="field-hint" id="vehiclePlateHint"></div>
                 <datalist id="knownPlatesList"></datalist>
               </div>
               <div class="input-group">
-                <input type="number" class="input-field" id="totalLiters" placeholder=" ">
+                <input type="number" class="input-field" id="totalLiters" placeholder=" "
+                  data-validate="positive-number" oninput="liveValidate(this)">
                 <label class="input-label">Total Litres</label>
+                <div class="field-hint" id="totalLitersHint"></div>
               </div>
               <div class="input-group">
                 <input type="date" class="input-field" id="orderDate">
@@ -5384,14 +6584,16 @@ Example:
           </div>
           <div class="grid grid-cols-3 gap-4">
             <div class="select-wrapper">
-              <select class="select-field" id="allocOrder"></select>
+              <select class="select-field" id="allocOrder" onchange="liveValidate(document.getElementById('allocAmount'))"></select>
             </div>
             <div class="select-wrapper">
-              <select class="select-field" id="allocTech"></select>
+              <select class="select-field" id="allocTech" onchange="liveValidate(document.getElementById('allocAmount'))"></select>
             </div>
             <div class="input-group">
-              <input type="number" class="input-field" id="allocAmount" placeholder=" ">
+              <input type="number" class="input-field" id="allocAmount" placeholder=" "
+                data-validate="alloc-amount" oninput="liveValidate(this)">
               <label class="input-label">Litres</label>
+              <div class="field-hint" id="allocAmountHint"></div>
             </div>
           </div>
           <button class="btn btn-primary w-full mt-4" onclick="allocateFuel()">
@@ -5401,9 +6603,12 @@ Example:
 
         <div class="card">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">All Orders</h3>
-            <div class="flex gap-2">
-              <div class="flex gap-1 mr-4">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <h3 class="text-lg font-semibold">All Orders</h3>
+              <span id="ordersRowCount" class="text-xs" style="color:var(--neutral-400);font-weight:500;"></span>
+            </div>
+            <div class="flex gap-2 flex-wrap items-center">
+              <div class="flex gap-1 mr-2">
                 <button class="btn btn-sm ${orderFilterStatus === 'all' ? 'btn-primary' : 'btn-secondary'}" onclick="setOrderFilter('all')">All</button>
                 <button class="btn btn-sm ${orderFilterStatus === 'open' ? 'btn-primary' : 'btn-secondary'}" onclick="setOrderFilter('open')">Open</button>
                 <button class="btn btn-sm ${orderFilterStatus === 'closed' ? 'btn-primary' : 'btn-secondary'}" onclick="setOrderFilter('closed')">Closed</button>
@@ -5417,6 +6622,8 @@ Example:
               </div>
               <input type="date" class="input-field" style="width: 140px;" id="orderFilterFrom" onchange="renderOrdersList()">
               <input type="date" class="input-field" style="width: 140px;" id="orderFilterTo" onchange="renderOrdersList()">
+              ${renderDensityToggle()}
+              ${renderColChooser('orders')}
             </div>
           </div>
           <div id="ordersListContainer"></div>
@@ -5428,6 +6635,7 @@ Example:
       populateAllocTech();
       populateVehiclePlateDatalist();
       renderOrdersList();
+      setTimeout(() => { applyColVisibility('orders'); updateColChooserBtn('orders'); }, 50);
     }
 
     function setOrderFilter(filter) {
@@ -5496,6 +6704,15 @@ Example:
       document.getElementById('vehiclePlate').value = region.lastUsedPlate || '';
       document.getElementById('totalLiters').value = '';
       document.getElementById('orderDate').value = '';
+      // Clear live-validation hints
+      ['orderNoHint','vehiclePlateHint','totalLitersHint'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = ''; el.className = 'field-hint'; }
+      });
+      ['orderNo','vehiclePlate','totalLiters'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.borderColor = '';
+      });
       
       updateOrderStats();
       populateAllocOrder();
@@ -5659,6 +6876,14 @@ Example:
           opt.value = t; opt.textContent = t; techSelect.appendChild(opt);
         });
         techSelect.value = currentValue;
+      }
+
+      // Update row count badge
+      const rowCountEl = document.getElementById('ordersRowCount');
+      if (rowCountEl) {
+        const total = orders.length;
+        const shown = filteredCurrentOrders.length + carriedOrders.length;
+        rowCountEl.textContent = shown === total ? `${total} order${total !== 1 ? 's' : ''}` : `${shown} of ${total} orders`;
       }
       
       if (!filteredCurrentOrders.length && !carriedOrders.length) {
@@ -6043,20 +7268,23 @@ Example:
                   <div class="order-info">
                     <div class="order-title">${order.orderNo}</div>
                     <div class="order-meta">
-                      <span><i class="fa-regular fa-truck"></i> ${order.vehiclePlate}</span>
-                      <span><i class="fa-regular fa-calendar"></i> ${order.createdDate || '—'}</span>
-                      <span><i class="fa-regular fa-users"></i> ${hasAllocations ? Object.keys(order.allocations || {}).length + ' techs' : 'Unassigned'}</span>
+                      <span data-col="orders-vehicle"><i class="fa-regular fa-truck"></i> ${order.vehiclePlate}</span>
+                      <span data-col="orders-date"><i class="fa-regular fa-calendar"></i> ${order.createdDate || '—'}</span>
+                      <span data-col="orders-techs"><i class="fa-regular fa-users"></i> ${hasAllocations ? Object.keys(order.allocations || {}).length + ' techs' : 'Unassigned'}</span>
                       ${isNearly ? '<span class="text-warning-700 font-semibold">⚠️ Nearly full</span>' : ''}
                     </div>
                   </div>
                   <div class="order-stats">
-                    <div class="order-progress">
+                    <div data-col="orders-progress" class="order-progress">
                       <div class="progress-bar">
                         <div class="progress-fill ${!hasAllocations ? '' : (progress >= 100 ? 'warning' : isNearly ? 'warning' : progress >= 75 ? 'success' : 'info')}" style="width: ${hasAllocations ? progress : 0}%;"></div>
                       </div>
-                      <div class="text-sm text-center mt-1">${order.suppliedTotal}/${order.totalLiters}L</div>
+                      <div class="text-sm text-center mt-1">
+                        <span data-col="orders-supplied">${order.suppliedTotal}</span>/<span data-col="orders-total">${order.totalLiters}</span>L
+                        (<span data-col="orders-balance">${balance}L left</span>)
+                      </div>
                     </div>
-                    <span class="badge ${statusBadge}">${statusText}</span>
+                    <span data-col="orders-status" class="badge ${statusBadge}">${statusText}</span>
                   </div>
                   <i class="fa-regular fa-chevron-down order-chevron" id="chev_${order.orderNo}"></i>
                 </div>
@@ -6074,6 +7302,7 @@ Example:
       }
       
       container.innerHTML = html;
+      applyColVisibility('orders');
     }
 
     function toggleOrderGroup(gId) {
@@ -6458,15 +7687,19 @@ Example:
           <h3 class="text-lg font-semibold mb-4">Technicians</h3>
           <div class="grid grid-cols-2 gap-4 mb-4">
             <div class="input-group">
-              <input type="text" class="input-field" id="techName" placeholder=" " list="techNameSuggestions" autocomplete="off">
+              <input type="text" class="input-field" id="techName" placeholder=" " list="techNameSuggestions" autocomplete="off"
+                data-validate="required" oninput="liveValidate(this)">
               <label class="input-label">Technician Name</label>
+              <div class="field-hint" id="techNameHint"></div>
               <datalist id="techNameSuggestions">
                 ${[...TECH_MANAGER.allTechs].sort().map(t=>`<option value="${t}">`).join('')}
               </datalist>
             </div>
             <div class="input-group">
-              <input type="text" class="input-field" id="techPlate" placeholder=" ">
+              <input type="text" class="input-field" id="techPlate" placeholder=" "
+                data-validate="plate" oninput="liveValidate(this)">
               <label class="input-label">Vehicle Plate (optional)</label>
+              <div class="field-hint" id="techPlateHint"></div>
             </div>
           </div>
           <button class="btn btn-primary w-full mb-2" onclick="addTechnician()">
@@ -6967,7 +8200,7 @@ Example:
         <div class="card">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold">Technician Leaderboard</h3>
-            <div class="flex gap-2">
+            <div class="flex gap-2 flex-wrap items-center">
               <button class="btn btn-secondary btn-sm" onclick="openTechTargetModal()">
                 <i class="fa-regular fa-bullseye"></i> Set Targets
               </button>
@@ -6984,6 +8217,7 @@ Example:
                   <option value="90">Last 90 Days</option>
                 </select>
               </div>
+              <span id="lbDensityToggle"></span>
             </div>
           </div>
           <div id="leaderboardListContainer"></div>
@@ -6992,6 +8226,8 @@ Example:
 
       populateLbRegionFilter();
       renderLeaderboardList();
+      const lbDt = document.getElementById('lbDensityToggle');
+      if (lbDt) lbDt.innerHTML = renderDensityToggle();
     }
 
     function populateLbRegionFilter() {
@@ -7984,7 +9220,7 @@ Example:
       renderPageWithTransition(currentPage);
     }
 
-    function toggleSidebar() {
+    function _toggleSidebarLegacy() {
       document.getElementById('sidebar').classList.toggle('collapsed');
       document.getElementById('mainContent').classList.toggle('expanded');
     }
@@ -8057,16 +9293,10 @@ Example:
           if (currentPage === 'daily') saveDaily();
         }
         
-        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        // Ctrl+K → command palette (handled by the CMD listener above, but keep focus fallback)
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'f')) {
           e.preventDefault();
-          const inp = document.getElementById('globalSearch');
-          if (inp) { inp.focus(); inp.select(); }
-        }
-        
-        if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
-          e.preventDefault();
-          const inp = document.getElementById('globalSearch');
-          if (inp) { inp.focus(); inp.select(); }
+          openCommandPalette();
         }
         
         if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
@@ -8089,12 +9319,21 @@ Example:
           setPage('leaderboard', null);
         }
         
-        if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) {
           e.preventDefault();
           openModal('shortcutsModal');
         }
         
         if (e.key === 'Escape') {
+          // Close command palette first
+          const cmdOverlay = document.getElementById('cmdOverlay');
+          if (cmdOverlay?.classList.contains('active')) {
+            closeCommandPalette();
+            return;
+          }
+          // Close tour
+          if (_tourActive) { endTour(); return; }
+
           const activeModals = document.querySelectorAll('.modal-overlay.active');
           if (activeModals.length) {
             const topModal = activeModals[activeModals.length - 1];
@@ -8379,7 +9618,7 @@ Example:
     }
 
     // ===== CYCLE MANAGEMENT =====
-    function openEndCycleModal() {
+    function _openEndCycleModalCore() {
       const region = DB.regions[DB.currentRegion];
       // Only count assigned orders in the summary
       const allOrders = Object.values(region.orders).filter(o => Object.keys(o.allocations || {}).length > 0);
@@ -9365,20 +10604,43 @@ Example:
 
     // ===== INITIALIZATION =====
     function init() {
+      // Restore dark mode
       if (localStorage.getItem('ccs_dark_mode') === '1') {
         document.body.classList.add('dark-mode');
         const btn = document.getElementById('darkModeBtn');
         if (btn) btn.innerHTML = '<i class="fa-regular fa-sun"></i><span>Light Mode</span>';
       }
-      
+
+      // Restore sidebar collapsed state
+      if (localStorage.getItem('ccs_sidebar_collapsed') === '1') {
+        document.getElementById('sidebar')?.classList.add('collapsed');
+        document.getElementById('mainContent')?.classList.add('expanded');
+        const icon = document.getElementById('sidebarToggleIcon');
+        const btn = document.getElementById('sidebarToggleBtn');
+        if (icon) icon.className = 'fa-regular fa-chevron-right';
+        if (btn) { const sp = btn.querySelector('span'); if(sp) sp.textContent = 'Expand'; }
+      }
+
+      // Apply saved table density
+      setTableDensity(localStorage.getItem('ccs_table_density') || 'default');
+
       populateRegions();
       renderPageWithTransition('dashboard');
+      updateBreadcrumb('dashboard');
       setupKeyboardShortcuts();
       renderBackupStatus();
       setupContextMenu();
       setTimeout(renderNotifications, 500);
       
       startAutoBackup();
+
+      // First-run: show What's New modal after 1.5s
+      if (!localStorage.getItem('ccs_seen_v2')) {
+        setTimeout(() => {
+          openWhatsNewModal();
+          localStorage.setItem('ccs_seen_v2', '1');
+        }, 1500);
+      }
 
       const searchInput = document.getElementById('globalSearch');
       if (searchInput) {
@@ -10638,6 +11900,10 @@ Example:
 
       const regionLabels = { nrw:'NRW', eastern:'Eastern', old_cbt:'Old CBT', new_cbt:'New CBT' };
       const regionColors = { nrw:'var(--accent-600)', eastern:'var(--status-info)', old_cbt:'var(--status-success)', new_cbt:'var(--status-warning)' };
+      const regionPrefixes = { nrw:'IHS_NRW', eastern:'IHS_EST', old_cbt:'IHS_CBT', new_cbt:'IHS_CBT' };
+
+      // Collect known tech names across all regions for datalist
+      const allKnownTechs = [...TECH_MANAGER.allTechs].sort();
 
       container.innerHTML = `
       <div class="page-header mb-5">
@@ -10645,11 +11911,11 @@ Example:
           <h2 class="font-bold tracking-tight">Technician Manager</h2>
           <p class="text-sm mt-1" style="color:var(--neutral-500)">Site-to-technician assignments across all regions</p>
         </div>
-        <div class="flex gap-3">
+        <div class="flex gap-3 flex-wrap">
           <button class="btn btn-ghost btn-sm" id="tmBulkDeleteBtn" style="display:none;color:var(--status-danger);" onclick="tmBulkDelete()">
             <i class="fa-regular fa-trash"></i> Delete Selected (<span id="tmBulkCount">0</span>)
           </button>
-          <label class="btn btn-secondary btn-sm" style="cursor:pointer;" title="Import CSV or JSON of new technicians">
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;" title="Import CSV or JSON">
             <i class="fa-regular fa-file-import"></i> Import CSV/JSON
             <input type="file" accept=".csv,.json" style="display:none;" onchange="tmHandleImport(event)">
           </label>
@@ -10657,6 +11923,7 @@ Example:
         </div>
       </div>
 
+      <!-- KPI tiles -->
       <div class="grid grid-cols-4 gap-4 mb-5">
         <div class="card" style="text-align:center;">
           <div class="text-3xl font-bold" style="color:var(--accent-600);">${totalSites}</div>
@@ -10673,6 +11940,144 @@ Example:
         </div>`).join('')}
       </div>
 
+      <!-- ═══ ACTION PANELS ═══ -->
+      <div class="grid grid-cols-3 gap-4 mb-5" id="tmActionPanels">
+
+        <!-- Panel 1: Add New Site Assignment -->
+        <div class="card" style="border-top:3px solid var(--accent-600);">
+          <div class="flex items-center gap-2 mb-4">
+            <div style="width:32px;height:32px;border-radius:var(--radius-md);background:var(--accent-100);display:flex;align-items:center;justify-content:center;color:var(--accent-600);flex-shrink:0;">
+              <i class="fa-regular fa-plus"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-sm">Add New Site</div>
+              <div style="font-size:0.7rem;color:var(--neutral-500);">Assign a site ID to a technician</div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-3">
+            <div>
+              <label style="font-size:0.72rem;font-weight:600;color:var(--neutral-600);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Region</label>
+              <div class="select-wrapper">
+                <select class="select-field" id="tmAddRegion" onchange="tmUpdateSitePrefix()">
+                  <option value="">— select region —</option>
+                  ${Object.entries(regionLabels).map(([k,v])=>`<option value="${k}">${v} (${regionPrefixes[k]})</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:0.72rem;font-weight:600;color:var(--neutral-600);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Site ID</label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <span id="tmSitePrefix" style="font-family:var(--font-mono);font-size:0.75rem;font-weight:700;color:var(--neutral-500);white-space:nowrap;padding:0 4px;">IHS_???_</span>
+                <input type="text" class="input-field" id="tmAddSiteNum" placeholder="e.g. 035M or 210A"
+                  style="font-family:var(--font-mono);font-size:0.85rem;text-transform:uppercase;flex:1;"
+                  oninput="this.value=this.value.toUpperCase();tmPreviewSiteId()"
+                  maxlength="8">
+              </div>
+              <div id="tmSiteIdPreview" style="font-size:0.72rem;margin-top:4px;min-height:16px;"></div>
+            </div>
+            <div>
+              <label style="font-size:0.72rem;font-weight:600;color:var(--neutral-600);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Technician</label>
+              <input type="text" class="input-field" id="tmAddTechName" placeholder="e.g. KENNY"
+                style="text-transform:uppercase;"
+                oninput="this.value=this.value.toUpperCase()"
+                list="tmKnownTechsList" autocomplete="off">
+              <datalist id="tmKnownTechsList">
+                ${allKnownTechs.map(t=>`<option value="${t}">`).join('')}
+              </datalist>
+            </div>
+            <div id="tmAddSiteHint" style="font-size:0.72rem;min-height:16px;"></div>
+            <button class="btn btn-primary w-full" onclick="tmAddSite()">
+              <i class="fa-regular fa-check"></i> Add Site Assignment
+            </button>
+          </div>
+        </div>
+
+        <!-- Panel 2: Add / Rename Technician -->
+        <div class="card" style="border-top:3px solid var(--status-info);">
+          <div class="flex items-center gap-2 mb-4">
+            <div style="width:32px;height:32px;border-radius:var(--radius-md);background:var(--status-info-bg);display:flex;align-items:center;justify-content:center;color:var(--status-info);flex-shrink:0;">
+              <i class="fa-regular fa-user-plus"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-sm">Add / Rename Technician</div>
+              <div style="font-size:0.7rem;color:var(--neutral-500);">Bulk-rename or add a new tech name</div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-3">
+            <div>
+              <label style="font-size:0.72rem;font-weight:600;color:var(--neutral-600);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Region</label>
+              <div class="select-wrapper">
+                <select class="select-field" id="tmRenameRegion">
+                  <option value="">— all regions —</option>
+                  ${Object.entries(regionLabels).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:0.72rem;font-weight:600;color:var(--neutral-600);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Old / Existing Name</label>
+              <input type="text" class="input-field" id="tmOldTechName" placeholder="e.g. KENNY"
+                style="text-transform:uppercase;"
+                oninput="this.value=this.value.toUpperCase();tmPreviewRename()"
+                list="tmKnownTechsList2" autocomplete="off">
+              <datalist id="tmKnownTechsList2">
+                ${allKnownTechs.map(t=>`<option value="${t}">`).join('')}
+              </datalist>
+            </div>
+            <div>
+              <label style="font-size:0.72rem;font-weight:600;color:var(--neutral-600);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">New Name</label>
+              <input type="text" class="input-field" id="tmNewTechName" placeholder="e.g. KENNETH"
+                style="text-transform:uppercase;"
+                oninput="this.value=this.value.toUpperCase();tmPreviewRename()">
+            </div>
+            <div id="tmRenameHint" style="font-size:0.72rem;min-height:16px;"></div>
+            <button class="btn w-full" style="background:var(--status-info-bg);color:var(--status-info);border:1px solid var(--status-info)44;" onclick="tmRenameTech()">
+              <i class="fa-regular fa-pen"></i> Apply Rename
+            </button>
+          </div>
+        </div>
+
+        <!-- Panel 3: Reassign Site -->
+        <div class="card" style="border-top:3px solid var(--status-success);">
+          <div class="flex items-center gap-2 mb-4">
+            <div style="width:32px;height:32px;border-radius:var(--radius-md);background:var(--status-success-bg);display:flex;align-items:center;justify-content:center;color:var(--status-success);flex-shrink:0;">
+              <i class="fa-regular fa-arrows-rotate"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-sm">Reassign Site</div>
+              <div style="font-size:0.7rem;color:var(--neutral-500);">Move a site from one tech to another</div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-3">
+            <div>
+              <label style="font-size:0.72rem;font-weight:600;color:var(--neutral-600);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Site ID to Reassign</label>
+              <input type="text" class="input-field" id="tmReassignSiteId" placeholder="e.g. IHS_NRW_035M"
+                style="font-family:var(--font-mono);font-size:0.85rem;text-transform:uppercase;"
+                oninput="this.value=this.value.toUpperCase();tmPreviewReassign()"
+                list="tmAllSitesList" autocomplete="off">
+              <datalist id="tmAllSitesList">
+                ${TECH_MANAGER.getAllAssignments().map(r=>`<option value="${r.siteId}">`).join('')}
+              </datalist>
+            </div>
+            <div id="tmReassignCurrentInfo" style="font-size:0.72rem;min-height:36px;padding:6px 10px;border-radius:var(--radius-md);background:var(--neutral-50);border:1px solid var(--neutral-200);display:none;"></div>
+            <div>
+              <label style="font-size:0.72rem;font-weight:600;color:var(--neutral-600);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Reassign To</label>
+              <input type="text" class="input-field" id="tmReassignToTech" placeholder="e.g. LOMBE"
+                style="text-transform:uppercase;"
+                oninput="this.value=this.value.toUpperCase()"
+                list="tmKnownTechsList3" autocomplete="off">
+              <datalist id="tmKnownTechsList3">
+                ${allKnownTechs.map(t=>`<option value="${t}">`).join('')}
+              </datalist>
+            </div>
+            <div id="tmReassignHint" style="font-size:0.72rem;min-height:16px;"></div>
+            <button class="btn w-full" style="background:var(--status-success-bg);color:var(--status-success);border:1px solid var(--status-success)44;" onclick="tmReassignSite()">
+              <i class="fa-regular fa-arrows-rotate"></i> Reassign Site
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SEARCH + TABLE ═══ -->
       <div class="card mb-4">
         <div class="flex gap-3 flex-wrap items-center">
           <div class="flex-1" style="min-width:200px;">
@@ -10689,27 +12094,248 @@ Example:
             <i class="fa-regular fa-xmark"></i> Clear
           </button>
         </div>
-        <!-- Inline quick-lookup result -->
         <div id="tmQuickResult" style="display:none;margin-top:14px;padding:12px 16px;border-radius:var(--radius-lg);border:1px solid var(--neutral-200);background:var(--neutral-50);"></div>
       </div>
 
       <div class="card" style="padding:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--neutral-200);background:var(--neutral-50);">
+          <span class="text-xs font-semibold" style="color:var(--neutral-500);">SITE ASSIGNMENTS</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${renderDensityToggle()}
+          </div>
+        </div>
         <div id="tmTableWrap" style="max-height:520px;overflow-y:auto;">
-          <table class="table" style="table-layout:fixed;width:100%;">
+          <table class="table" style="table-layout:fixed;width:100%;" role="table" aria-label="Site assignments">
             <thead><tr>
               <th style="width:36px;padding:10px 8px;"><input type="checkbox" id="tmSelectAll" title="Select all" onchange="tmToggleSelectAll(this.checked)" style="cursor:pointer;accent-color:var(--accent-600);"></th>
-              <th style="width:34%">Site ID</th>
-              <th style="width:28%">Technician</th>
-              <th style="width:24%">Region</th>
-              <th style="width:80px;text-align:center;">Actions</th>
+              <th style="width:34%" scope="col">Site ID</th>
+              <th style="width:28%" scope="col">Technician</th>
+              <th style="width:24%" scope="col">Region</th>
+              <th style="width:80px;text-align:center;" scope="col">Actions</th>
             </tr></thead>
             <tbody id="tmTableBody"></tbody>
           </table>
         </div>
-        <div id="tmFooter" class="p-4 text-sm" style="color:var(--neutral-500);border-top:1px solid var(--neutral-200);"></div>
+        <div id="tmFooter" class="p-4 text-sm" style="color:var(--neutral-500);border-top:1px solid var(--neutral-200);display:flex;align-items:center;justify-content:space-between;">
+          <span id="tmRowCount"></span>
+        </div>
       </div>`;
 
       tmRenderTable();
+    }
+
+    // ── helpers for the action panels ──────────────────────────────────────────
+
+    const _tmRegionPrefixes = { nrw:'IHS_NRW', eastern:'IHS_EST', old_cbt:'IHS_CBT', new_cbt:'IHS_CBT' };
+    const _tmRegionLabels   = { nrw:'NRW', eastern:'Eastern', old_cbt:'Old CBT', new_cbt:'New CBT' };
+
+    function tmUpdateSitePrefix() {
+      const region = document.getElementById('tmAddRegion')?.value;
+      const pfxEl  = document.getElementById('tmSitePrefix');
+      if (pfxEl) pfxEl.textContent = region ? (_tmRegionPrefixes[region] + '_') : 'IHS_???_';
+      tmPreviewSiteId();
+    }
+
+    function _tmNormaliseSuffix(raw) {
+      // Zero-pad numeric part to 3 digits
+      const s = raw.trim().toUpperCase();
+      const m = s.match(/^(\d+)([A-Z]*)$/);
+      if (!m) return s;
+      const padded = m[1].length < 3 ? m[1].padStart(3, '0') : m[1];
+      return padded + m[2];
+    }
+
+    function tmPreviewSiteId() {
+      const region  = document.getElementById('tmAddRegion')?.value;
+      const numRaw  = (document.getElementById('tmAddSiteNum')?.value || '').trim();
+      const preview = document.getElementById('tmSiteIdPreview');
+      const hint    = document.getElementById('tmAddSiteHint');
+      if (!preview) return;
+
+      if (!region || !numRaw) {
+        preview.textContent = '';
+        if (hint) { hint.textContent = ''; hint.style.color = ''; }
+        return;
+      }
+
+      const suffix = _tmNormaliseSuffix(numRaw);
+      const fullId = `${_tmRegionPrefixes[region]}_${suffix}`;
+      preview.innerHTML = `<span style="font-family:var(--font-mono);font-weight:700;color:var(--accent-700);">→ ${fullId}</span>`;
+
+      // Check for duplicate
+      const exists = TECH_MANAGER.data[region]?.[fullId] !== undefined;
+      if (hint) {
+        if (exists) {
+          hint.textContent = `⚠ Already assigned to: ${TECH_MANAGER.data[region][fullId]}`;
+          hint.style.color = 'var(--status-warning)';
+        } else if (numRaw.length >= 2) {
+          hint.textContent = '✓ Site ID available';
+          hint.style.color = 'var(--status-success)';
+        } else {
+          hint.textContent = '';
+        }
+      }
+    }
+
+    function tmAddSite() {
+      const region   = document.getElementById('tmAddRegion')?.value;
+      const numRaw   = (document.getElementById('tmAddSiteNum')?.value || '').trim();
+      const techRaw  = (document.getElementById('tmAddTechName')?.value || '').trim().toUpperCase();
+      const hint     = document.getElementById('tmAddSiteHint');
+
+      const setHint = (msg, color) => { if (hint) { hint.textContent = msg; hint.style.color = color; } };
+
+      if (!region)  return setHint('Please select a region.', 'var(--status-danger)');
+      if (!numRaw)  return setHint('Please enter a site number (e.g. 035M).', 'var(--status-danger)');
+      if (!techRaw) return setHint('Please enter a technician name.', 'var(--status-danger)');
+
+      const suffix = _tmNormaliseSuffix(numRaw);
+      const fullId = `${_tmRegionPrefixes[region]}_${suffix}`;
+
+      if (TECH_MANAGER.data[region]?.[fullId] !== undefined) {
+        return setHint(`⚠ ${fullId} already exists (assigned to ${TECH_MANAGER.data[region][fullId]}).`, 'var(--status-warning)');
+      }
+
+      if (!TECHNICIAN_DATA[region]) TECHNICIAN_DATA[region] = {};
+      TECHNICIAN_DATA[region][fullId] = techRaw;
+      TECH_MANAGER._build();
+
+      // Clear fields
+      document.getElementById('tmAddSiteNum').value   = '';
+      document.getElementById('tmAddTechName').value  = '';
+      document.getElementById('tmSiteIdPreview').textContent = '';
+      setHint(`✅ Added: ${fullId} → ${techRaw}`, 'var(--status-success)');
+
+      showToast(`✅ Added ${fullId} → ${techRaw}`, 'success');
+      tmRenderTable();
+      // Highlight the new row
+      setTimeout(() => {
+        const row = document.querySelector(`tr[data-siteid="${fullId}"]`);
+        if (row) {
+          row.style.background = 'var(--accent-50)';
+          row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          setTimeout(() => { row.style.background = ''; }, 2000);
+        }
+      }, 100);
+    }
+
+    function tmPreviewRename() {
+      const oldName = (document.getElementById('tmOldTechName')?.value || '').trim().toUpperCase();
+      const newName = (document.getElementById('tmNewTechName')?.value || '').trim().toUpperCase();
+      const hint    = document.getElementById('tmRenameHint');
+      if (!hint) return;
+
+      if (!oldName || !newName) { hint.textContent = ''; return; }
+
+      const region = document.getElementById('tmRenameRegion')?.value;
+      let count = 0;
+      Object.entries(TECHNICIAN_DATA).forEach(([r, map]) => {
+        if (region && r !== region) return;
+        Object.values(map).forEach(t => { if (t === oldName) count++; });
+      });
+
+      if (count === 0) {
+        hint.textContent = `⚠ "${oldName}" not found${region ? ' in ' + _tmRegionLabels[region] : ''}.`;
+        hint.style.color = 'var(--status-warning)';
+      } else {
+        hint.textContent = `→ Will rename ${count} site${count!==1?'s':''} from "${oldName}" to "${newName}"`;
+        hint.style.color = 'var(--status-info)';
+      }
+    }
+
+    function tmRenameTech() {
+      const oldName = (document.getElementById('tmOldTechName')?.value || '').trim().toUpperCase();
+      const newName = (document.getElementById('tmNewTechName')?.value || '').trim().toUpperCase();
+      const region  = document.getElementById('tmRenameRegion')?.value;
+      const hint    = document.getElementById('tmRenameHint');
+
+      const setHint = (msg, color) => { if (hint) { hint.textContent = msg; hint.style.color = color; } };
+
+      if (!oldName) return setHint('Enter the existing technician name.', 'var(--status-danger)');
+      if (!newName) return setHint('Enter the new technician name.', 'var(--status-danger)');
+      if (oldName === newName) return setHint('Old and new names are the same.', 'var(--status-warning)');
+
+      let count = 0;
+      Object.entries(TECHNICIAN_DATA).forEach(([r, map]) => {
+        if (region && r !== region) return;
+        Object.keys(map).forEach(sid => {
+          if (map[sid] === oldName) { map[sid] = newName; count++; }
+        });
+      });
+
+      TECH_MANAGER._build();
+
+      if (count === 0) {
+        return setHint(`"${oldName}" not found — no changes made.`, 'var(--status-warning)');
+      }
+
+      document.getElementById('tmOldTechName').value = '';
+      document.getElementById('tmNewTechName').value = '';
+      setHint(`✅ Renamed ${count} site${count!==1?'s':''} from "${oldName}" to "${newName}"`, 'var(--status-success)');
+      showToast(`✅ Renamed "${oldName}" → "${newName}" (${count} site${count!==1?'s':''})`, 'success');
+      tmRenderTable();
+    }
+
+    function tmPreviewReassign() {
+      const siteId  = (document.getElementById('tmReassignSiteId')?.value || '').trim().toUpperCase();
+      const infoEl  = document.getElementById('tmReassignCurrentInfo');
+      const hint    = document.getElementById('tmReassignHint');
+      if (!infoEl) return;
+
+      if (!siteId || siteId.length < 6) {
+        infoEl.style.display = 'none';
+        if (hint) hint.textContent = '';
+        return;
+      }
+
+      const hit = TECH_MANAGER.lookup(siteId);
+      if (hit) {
+        infoEl.style.display = 'block';
+        infoEl.innerHTML = `<span style="color:var(--neutral-500);">Currently assigned to:</span> <strong style="color:var(--accent-700);">${hit.techName}</strong> <span style="color:var(--neutral-400);">(${_tmRegionLabels[hit.region]||hit.region})</span>`;
+        if (hint) { hint.textContent = ''; }
+      } else {
+        infoEl.style.display = 'block';
+        infoEl.innerHTML = `<span style="color:var(--status-danger);">Site ID not found in any region.</span>`;
+        if (hint) { hint.textContent = ''; }
+      }
+    }
+
+    function tmReassignSite() {
+      const siteId  = (document.getElementById('tmReassignSiteId')?.value || '').trim().toUpperCase();
+      const toTech  = (document.getElementById('tmReassignToTech')?.value || '').trim().toUpperCase();
+      const hint    = document.getElementById('tmReassignHint');
+
+      const setHint = (msg, color) => { if (hint) { hint.textContent = msg; hint.style.color = color; } };
+
+      if (!siteId)  return setHint('Enter the site ID to reassign.', 'var(--status-danger)');
+      if (!toTech)  return setHint('Enter the technician to assign to.', 'var(--status-danger)');
+
+      const hit = TECH_MANAGER.lookup(siteId);
+      if (!hit) return setHint(`Site ID "${siteId}" not found.`, 'var(--status-danger)');
+
+      const fromTech = hit.techName;
+      if (fromTech === toTech) return setHint(`Site is already assigned to ${toTech}.`, 'var(--status-warning)');
+
+      TECHNICIAN_DATA[hit.region][siteId] = toTech;
+      TECH_MANAGER._build();
+
+      // Clear fields
+      document.getElementById('tmReassignSiteId').value = '';
+      document.getElementById('tmReassignToTech').value = '';
+      document.getElementById('tmReassignCurrentInfo').style.display = 'none';
+      setHint(`✅ ${siteId} reassigned from ${fromTech} to ${toTech}`, 'var(--status-success)');
+
+      showToast(`✅ Reassigned ${siteId}: ${fromTech} → ${toTech}`, 'success');
+      tmRenderTable();
+      // Highlight the updated row
+      setTimeout(() => {
+        const row = document.querySelector(`tr[data-siteid="${siteId}"]`);
+        if (row) {
+          row.style.background = 'var(--status-success-bg)';
+          row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          setTimeout(() => { row.style.background = ''; }, 2000);
+        }
+      }, 100);
     }
 
     function tmRenderTable() {
@@ -11149,7 +12775,7 @@ Example:
               <thead><tr>
                 <th style="width:40px;"></th>
                 <th>Date</th><th>Site ID</th><th>Technician</th>
-                <th>Fuel Found</th><th>Fuel Added</th><th>Supplier</th><th>CPH</th><th>Status</th>
+                <th>Fuel Found</th><th>Fuel Added</th><th>Supplier</th><th>CPH</th><th>Bowser</th><th>Status</th>
               </tr></thead>
               <tbody id="autoPreviewBody"></tbody>
             </table>
@@ -11350,11 +12976,18 @@ Example:
     // ============================================================
     const REGION_VARIATION_MAPS = {
       'New CCS': {
-        'CURRENT DG RUN HOURS':  ['rt','dg current run time','gd run time','runtime','run time'],
-        'PREVIOUS DG RUN HOURS': ['pre rt','previous run time','previous runtime'],
-        'FUEL FOUND':  ['fuel found','initial fuel level','initial'],
-        'FUEL ADDED':  ['fuel added','added'],
-        'SITE ID':     ['site id','cbt'],
+        'CURRENT DG RUN HOURS':  ['dg current run time','gd run time','dg run time','dg run','dg rt','runtime','run time','run'],
+        'PREVIOUS DG RUN HOURS': ['previous run time','previous runtime','previous time','pre rt','previous rt','previous'],
+        'FUEL FOUND':  ['initial fuel level','initial fuel','fuel found','initial dp','intial dp','intial level','initial'],
+        'FUEL ADDED':  ['fuel added','added fuel','uplifted','added'],
+        'QTY FUEL':    ['qty fuel','qty'],
+        'FUEL LEFT':   ['fuel quantity left','fuel quantity left:','quantity left'],
+        'BOWSER PLATE':['bowser number plate','bowser plate','number plate'],
+        'OIL LEVEL':   ['dg oil level','oil level'],
+        'FAN BELT':    ['fan belt status','fan belt'],
+        'COOLANT':     ['dg coolant level','coolant level','coolant'],
+        'FUEL LEAKS':  ['fuel lines leakages','fuel leakage','leakages'],
+        'SITE ID':     ['site id','site i\'d','cbt'],
         'SITE NAME':   ['site name','name'],
         'SUPPLIER':    ['fuel source','source'],
         'DATE':        ['date'],
@@ -11362,16 +12995,23 @@ Example:
         'NAME OF TECHNICIAN': ['name of technician','technician','tech']
       },
       'Old CCS': {
-        'CURRENT DG RUN HOURS':  ['rt','run time','gd run time'],
-        'PREVIOUS DG RUN HOURS': ['previous runtime','previous run time'],
-        'FUEL FOUND':  ['initial','found','initial fuel level'],
-        'FUEL ADDED':  ['added','fuel added'],
-        'SITE ID':     ['cbt','site id'],
+        'CURRENT DG RUN HOURS':  ['dg current run time','gd run time','dg run time','runtime','run time','run'],
+        'PREVIOUS DG RUN HOURS': ['previous run time','previous runtime','previous time','previous rt','previous'],
+        'FUEL FOUND':  ['initial fuel level','initial fuel','fuel found','initial dp','intial dp','initial'],
+        'FUEL ADDED':  ['fuel added','added fuel','uplifted','added'],
+        'QTY FUEL':    ['qty fuel','qty'],
+        'FUEL LEFT':   ['fuel quantity left','quantity left'],
+        'BOWSER PLATE':['bowser number plate','bowser plate','number plate'],
+        'OIL LEVEL':   ['dg oil level','oil level'],
+        'FAN BELT':    ['fan belt status','fan belt'],
+        'COOLANT':     ['dg coolant level','coolant level'],
+        'FUEL LEAKS':  ['fuel lines leakages','fuel leakage'],
+        'SITE ID':     ['site id','site i\'d','cbt'],
         'SITE NAME':   ['site name'],
         'SUPPLIER':    ['fuel source','source'],
         'DATE':        ['date'],
         'CPH':         ['cph'],
-        'NAME OF TECHNICIAN': ['technician']
+        'NAME OF TECHNICIAN': ['name of technician','technician']
       },
       'NRW': {
         'CURRENT DG RUN HOURS':  ['gd run time','dg run time','dg rt','run time','runtime','runTime','rt'],
@@ -11472,7 +13112,24 @@ Example:
         // Sub-split on site-ID boundary lines within this WA message
         const subBlocks = trimmed.split(siteSplitRe);
 
+        // ── CCS extra split: also split on "REFUELING TEMPLATE" headers ──
+        // CCS technicians often paste multiple reports in one WA message without
+        // a site-ID line at the start. Split those apart here.
+        const ccsSubBlocks = [];
         for (const sb of subBlocks) {
+          // Check if this sub-block contains multiple REFUELING TEMPLATE headers
+          if (/REFUELING\s+TEMPLATE/i.test(sb)) {
+            const refuelParts = sb.split(/(?=REFUELING\s+TEMPLATE)/i);
+            for (const part of refuelParts) {
+              const t = part.trim();
+              if (t) ccsSubBlocks.push(t);
+            }
+          } else {
+            ccsSubBlocks.push(sb);
+          }
+        }
+
+        for (const sb of ccsSubBlocks) {
           const t = sb.trim();
           if (!t || t.length < 5) continue;
 
@@ -11486,9 +13143,11 @@ Example:
           const hasStructure = /(Site|Date|Found|Added|RT|Run|CPH|Initial|Fuel)\s*[:\-]/i.test(t);
           // Skip fuel-request / planning messages — have site IDs but zero fuel data
           const isFuelRequest = /fuel\s*request\s*for/i.test(t);
+          // CCS: also admit blocks that start with REFUELING TEMPLATE and have fuel structure
+          const isRefuelingTemplate = /REFUELING\s+TEMPLATE/i.test(t);
 
           if (isFuelRequest) { continue; } // silently skip fuel-request messages
-          if (!(hasSite || hasEmojiId || hasCodeId || hasSiteLabel || (hasFuel && hasStructure))) continue;
+          if (!(hasSite || hasEmojiId || hasCodeId || hasSiteLabel || isRefuelingTemplate || (hasFuel && hasStructure))) continue;
           blocks.push({ text: t, waDate, waSender });
         }
       }
@@ -11530,7 +13189,19 @@ Example:
       waSender = waSender || '';
       // Strip WA header cruft from lines for clean processing
       const waHeaderStrip = /\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}\s*-[^:]+:/g;
-      const cleanText = blockText.replace(waHeaderStrip, '').trim();
+      // ── CCS PRE-CLEAN ── Applied before any parsing so all downstream logic is clean
+      // 1. Superscript "⁵Previous" → "Previous" (Faxon's copy-paste artifact)
+      let blockPreClean = blockText.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+\s*(Previous)/gi, '$1');
+      // 2. Dot-separated date "04.04.26" → "04/04/26"
+      blockPreClean = blockPreClean.replace(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/g, '$1/$2/$3');
+      // 3. Spaces inside numbers e.g. "10 0" → "100" and "2 .5" → "2.5"
+      //    Only on value sides (after colon/separator) to avoid matching site IDs
+      blockPreClean = blockPreClean.replace(/:\s*(\d+)\s+0(?=\s*$|\s*\n)/gm, ': $10');
+      blockPreClean = blockPreClean.replace(/(\d)\s+\.\s*(\d)/g, '$1.$2');
+      // 4. "stollen"/"Stollen" → "stolen" (typo normalisation for stolen fuel)
+      blockPreClean = blockPreClean.replace(/stollen/gi, 'stolen');
+      // 5. "Qty" lines that have both label and value on same line → keep as-is (handled by varMap)
+      const cleanText = blockPreClean.replace(waHeaderStrip, '').trim();
       const lines = cleanText.split('\n').map(l=>l.trim()).filter(Boolean);
       if (!lines.length) return null;
 
@@ -11538,6 +13209,7 @@ Example:
 
       // ── 1. DATE — mirrors normalize_date() with WA drift correction ──
       // Pre-clean: remove spaces inside date like "14 /12/2025"
+      // Note: dot-dates already converted to slash in pre-clean above
       let dateClean = cleanText.replace(/(\d+)\s*\/\s*/g,'$1/');
       // Fix letter-digit typos like "3p/09" → "30/09"
       dateClean = dateClean.replace(/(\d)([A-Za-z])\//g, (_, d) => d+'0/');
@@ -11608,6 +13280,31 @@ Example:
 
       // ── 2. SITE ID — mirrors normalize_site_id() ──
       const shortPfx = prefix.split('_').pop();
+
+      // ── normaliseSiteId ──────────────────────────────────────────────────────
+      // Enforces the canonical format: IHS_<REGION>_<3-digit-zero-padded><M|A>
+      //   e.g.  "IHS_NRW_35M"  → "IHS_NRW_035M"
+      //         "IHS_EST_4A"   → "IHS_EST_004A"
+      //         "ihs_nrw_035m" → "IHS_NRW_035M"
+      //         "IHS_EST_304M" → "IHS_EST_304M"  (already correct, unchanged)
+      //         "IHS_NRW_1234M"→ "IHS_NRW_1234M" (4-digit — left as-is, no prefix data uses 4 digits)
+      // rawSuffix is the captured part after the region prefix, e.g. "35M", "004A", "210"
+      function normaliseSiteId(rawSuffix) {
+        // Uppercase the whole thing first
+        const s = rawSuffix.trim().toUpperCase();
+        // Separate the numeric part from the trailing letter(s)
+        const m = s.match(/^(\d+)([A-Z]*)$/);
+        if (!m) return `${prefix}_${s}`; // unrecognised format — pass through uppercase
+        const digits = m[1];
+        const letter = m[2]; // 'M', 'A', or '' if missing
+        // Zero-pad to 3 digits only when the number is < 3 digits
+        // Numbers already 3+ digits are left exactly as-is
+        const padded = digits.length < 3 ? digits.padStart(3, '0') : digits;
+        // If no suffix letter present, leave without adding one (parser will match
+        // later via TECH_MANAGER even without letter when the TECHNICIAN_DATA key has one)
+        return `${prefix}_${padded}${letter}`;
+      }
+
       // Build site regex matching Python's site_pattern
       const siteRe = new RegExp(
         `(?:IHS[_\\s]*)?(?:${shortPfx}|NTH)[\\s_:,\\-\\.]*([0-9]{1,4}[A-Za-z]{0,2})`,
@@ -11616,28 +13313,27 @@ Example:
       let siteId = '';
       const siteM = cleanText.match(siteRe);
       if (siteM) {
-        const num = siteM[1].toUpperCase();
-        siteId = `${prefix}_${num}`;
+        siteId = normaliseSiteId(siteM[1]);
       }
-      // Emoji fallback: 🆔 001M
+      // Emoji fallback: 🆔 35M  or  🆔 001M
       if (!siteId) {
         const em = cleanText.match(/🆔\s*(\d{1,4}[A-Za-z]{0,2})/);
-        if (em) siteId = `${prefix}_${em[1].toUpperCase()}`;
+        if (em) siteId = normaliseSiteId(em[1]);
       }
-      // Code: fallback
+      // Code: fallback  e.g. "Code: 35M"
       if (!siteId) {
         const cm = cleanText.match(/\bCode\s*[:\-]?\s*(\d{1,4}[A-Za-z]{0,2})/i);
-        if (cm) siteId = `${prefix}_${cm[1].toUpperCase()}`;
+        if (cm) siteId = normaliseSiteId(cm[1]);
       }
-      // Bare "Site I'd: 286A" fallback (no prefix in message)
+      // Bare "Site I'd: 286A" fallback (no region prefix in message)
       if (!siteId) {
         const bm = cleanText.match(/Site\s*I'?d\s*[:\-]?\s*(\d{2,4}[A-Za-z]{0,2})/i);
-        if (bm) siteId = `${prefix}_${bm[1].toUpperCase()}`;
+        if (bm) siteId = normaliseSiteId(bm[1]);
       }
       // "Site id 050m" / "Site ID 050m" — no prefix, just numeric id after label
       if (!siteId) {
         const sm = cleanText.match(/Site\s*[Ii][Dd]\s*[:\s]\s*(\d{2,4}[A-Za-z]{0,2})/i);
-        if (sm) siteId = `${prefix}_${sm[1].toUpperCase()}`;
+        if (sm) siteId = normaliseSiteId(sm[1]);
       }
 
       if (siteId) {
@@ -11749,6 +13445,9 @@ Example:
         if (/^[\.\s\(\)]*$/.test(v) || /stolen/i.test(v) || /^\.*$/.test(v)) return 0;
         // Strip parenthetical notes like "0L( Tank decanted)" → "0"
         v = v.replace(/\s*\(.*\)\s*$/, '').trim().replace(/[Ll]$/, '');
+        // ── KEY RULE: if no digit present at all → FAULTY for RT fields ──
+        // Catches "Faulty Controller", "N/A", "broken", "--", etc.
+        if (allowFaulty && !/\d/.test(v)) return 'FAULTY';
         // Mixed alpha-numeric → strip letters
         if (/[a-zA-Z]/.test(v) && /\d/.test(v)) v = v.replace(/[^0-9.]/g,'');
         const n = parseFloat(v);
@@ -11814,6 +13513,28 @@ Example:
       const finalLevelN = Number(finalLevelRaw) || 0;
       if (fuelLeft === 0 && finalLevelN > 0) fuelLeft = finalLevelN;
 
+      // CCS OVERRIDE: use explicit "Fuel quantity Left" if present (more accurate than computed)
+      // This field is: remaining bowser fuel, not on-site — but it IS the site remaining figure
+      // as stated in the template ("Final fuel level" is site, "Fuel quantity Left" is bowser remaining)
+      // We keep the computed fuelLeft (Initial + Added = Final level on site) as the site fuel.
+      // The bowser remaining (Fuel quantity Left / data['FUEL LEFT']) is stored separately.
+      const bowserRemaining = data['FUEL LEFT'] ? convertNum(data['FUEL LEFT']) : null;
+      const bowserQty       = data['QTY FUEL']  ? convertNum(data['QTY FUEL'])  : null;
+      const bowserPlate     = data['BOWSER PLATE'] ? String(data['BOWSER PLATE']).trim().toUpperCase() : '';
+
+      // CPH: handle "Stollen" as a flag rather than a number
+      const cphRaw = data['CPH'];
+      let cphVal = 0;
+      if (cphRaw !== undefined && cphRaw !== null) {
+        const cphStr = String(cphRaw).trim();
+        if (/stolen/i.test(cphStr)) {
+          data['_STOLEN'] = true;
+          cphVal = 0;
+        } else {
+          cphVal = Number(convertNum(cphRaw, false)) || 0;
+        }
+      }
+
       // Mark faulty if truly missing both siteId and fuelAdded
       const issues = [];
       if (!siteId && !data['SITE NAME']) issues.push('no site ID or name');
@@ -11832,6 +13553,14 @@ Example:
         'CPH':                   data['CPH']                   ?? '',
         'CURRENT DG RUN HOURS':  data['CURRENT DG RUN HOURS']  ?? '',
         'PREVIOUS DG RUN HOURS': data['PREVIOUS DG RUN HOURS'] ?? '',
+        // CCS-specific extra fields
+        'QTY FUEL (BOWSER)':     bowserQty  !== null ? bowserQty  : '',
+        'BOWSER REMAINING':      bowserRemaining !== null ? bowserRemaining : '',
+        'BOWSER PLATE':          bowserPlate || '',
+        'OIL LEVEL':             data['OIL LEVEL']  || '',
+        'FAN BELT':              data['FAN BELT']   || '',
+        'COOLANT':               data['COOLANT']    || '',
+        'FUEL LEAKS':            data['FUEL LEAKS'] || '',
         // Convenience aliases used by preview table & daily-log import
         siteId:   data['SITE ID'] || '',
         techName: data['NAME OF TECHNICIAN'] || 'N/A',
@@ -11840,11 +13569,20 @@ Example:
         fuelAdded: fuelAddedN,
         fuelLeft:  fuelLeft > 0 ? fuelLeft : 0,
         supplier:  data['SUPPLIER'] || '',
-        cph:       Number(data['CPH'])||0,
+        cph:       cphVal,
         currRt:    Number(data['CURRENT DG RUN HOURS'])||0,
         prevRt:    Number(data['PREVIOUS DG RUN HOURS'])||0,
         siteName:  data['SITE NAME'] || '',
         sender:    waSender || '',
+        bowserPlate: bowserPlate || '',
+        bowserQty:   bowserQty || 0,
+        bowserRemaining: bowserRemaining || 0,
+        stolen:    !!data['_STOLEN'],
+        // Raw CCS check fields for Excel output
+        _rawOilLevel:  data['OIL LEVEL']  || '',
+        _rawFanBelt:   data['FAN BELT']   || '',
+        _rawCoolant:   data['COOLANT']    || '',
+        _rawFuelLeaks: data['FUEL LEAKS'] || '',
         _faulty:   issues.length > 0,
         _reason:   issues.join('; '),
         _selected: issues.length === 0,
@@ -11881,7 +13619,8 @@ Example:
           <td class="text-sm">${r.fuelFound||'—'}L</td>
           <td class="text-sm font-semibold">${r.fuelAdded||'—'}L</td>
           <td class="text-sm">${r.supplier||'—'}</td>
-          <td class="text-sm">${r.cph||'—'}</td>
+          <td class="text-sm">${r.stolen ? '<span class="badge badge-danger" title="Fuel stolen">🔴 Stolen</span>' : (r.cph||'—')}</td>
+          <td class="text-sm font-mono" style="font-size:0.72rem;color:var(--neutral-600);">${r.bowserPlate||'—'}</td>
           <td>${r._faulty
             ? `<span class="badge badge-danger" title="${escHtml(r._reason)}">Faulty</span>`
             : '<span class="badge badge-success">OK</span>'}</td>
@@ -12492,8 +14231,14 @@ Example:
           const fuelFound  = Number(entry['FUEL FOUND'] ?? entry.fuelFound ?? 0) || 0;
           const fuelAdded  = Number(entry['FUEL ADDED'] ?? entry.fuelAdded ?? 0) || 0;
           const fuelLeft   = fuelFound + fuelAdded;
-          const currRt     = Number(cRt)  || 0;
-          const prevRt     = Number(entry['PREVIOUS DG RUN HOURS'] ?? entry.prevRt ?? 0) || 0;
+          // FAULTY runtime: preserve the string 'FAULTY' exactly; otherwise numeric
+          const rawCurrRt  = entry['CURRENT DG RUN HOURS'] ?? entry.currRt ?? '';
+          const currRtIsFaulty = String(rawCurrRt).toUpperCase() === 'FAULTY';
+          const currRt     = currRtIsFaulty ? 'FAULTY' : (Number(cRt) || 0);
+
+          const rawPrevRt  = entry['PREVIOUS DG RUN HOURS'] ?? entry.prevRt ?? '';
+          const prevRtIsFaulty = String(rawPrevRt).toUpperCase() === 'FAULTY';
+          const prevRt     = prevRtIsFaulty ? 'FAULTY' : (Number(rawPrevRt) || 0);
           const cph        = Number(entry['CPH'] ?? entry.cph ?? 0) || 0;
 
           // Propagation values for new row
@@ -12553,8 +14298,11 @@ Example:
           if (fuelLeft  > 0) setCell('__FUELLEFT__', 'n', fuelLeft);
           setCell('__SUPPLIER__', 's', entry['SUPPLIER'] || entry.supplier || '');
           if (cph    > 0) setCell('__CPH__',    'n', cph);
-          if (currRt > 0) setCell('__CURRRT__', 'n', currRt);
-          if (prevRt > 0) setCell('__PREVRT__', 'n', prevRt);
+          // Write runtime — FAULTY written as string, valid number > 0 as numeric
+          if (currRtIsFaulty) setCell('__CURRRT__', 's', 'FAULTY');
+          else if (currRt > 0) setCell('__CURRRT__', 'n', currRt);
+          if (prevRtIsFaulty) setCell('__PREVRT__', 's', 'FAULTY');
+          else if (prevRt > 0) setCell('__PREVRT__', 'n', prevRt);
           setCell('__IHSID__', 's', siteIdUpper);
 
           // Propagation fields for new row
@@ -12783,10 +14531,20 @@ Example:
                 while (p > 0 && inner[p] !== '<') p--;
                 const cEnd = inner.indexOf('</c>', p);
                 if (cEnd !== -1) {
+                  const existingCellXml = inner.substring(p, cEnd + 4);
+                  // ── FORMULA GUARD: never overwrite a formula cell ──
+                  // Formula cells have a <f> element; their cached value is in <v>
+                  // with t="str" (string result) or no t attr (numeric result).
+                  // We must NEVER replace a formula cell — doing so destroys it.
+                  const hasFormula = /<f[\s>]/i.test(existingCellXml);
+                  if (hasFormula) {
+                    // Leave this cell completely untouched — formula is preserved.
+                    continue;
+                  }
                   inner = inner.substring(0, p) + patch.cellXml + inner.substring(cEnd + 4);
                 }
               } else {
-                // Cell not present — append inside row
+                // Cell not present — append inside row (safe: no formula to destroy)
                 inner += patch.cellXml;
               }
             }
@@ -12905,13 +14663,17 @@ Example:
     function autoExportCSV() {
       if (!_autoParseResults.length) return showToast('Nothing to export', 'warning');
       const rows = _autoParseResults.filter(r => !r._faulty);
-      const headers = ['Date','Site ID','Technician','Fuel Found (L)','Fuel Added (L)','Supplier','CPH','Curr RT','Prev RT','Sender'];
+      const headers = ['Date','Site ID','Site Name','Technician','Fuel Found (L)','Fuel Added (L)','Fuel Left (L)','Supplier','CPH','Curr RT','Prev RT','Bowser Plate','Bowser Remaining (L)','Stolen','Sender'];
       const csv = [
         headers.join(','),
         ...rows.map(r => [
-          r.date, r.siteId, r.techName,
-          r.fuelFound, r.fuelAdded, r.supplier,
-          r.cph, r.currRt, r.prevRt, `"${r.sender}"`
+          r.date, r.siteId, `"${r.siteName||''}"`, r.techName,
+          r.fuelFound, r.fuelAdded, r.fuelLeft||'', r.supplier,
+          r.stolen ? 'STOLEN' : (r.cph||''),
+          r.currRt, r.prevRt,
+          r.bowserPlate||'', r.bowserRemaining||'',
+          r.stolen ? 'YES' : 'NO',
+          `"${r.sender}"`
         ].join(','))
       ].join('\n');
       const blob = new Blob([csv], { type: 'text/csv' });
@@ -12931,6 +14693,7 @@ Example:
       if (!rows.length) return showToast('No valid entries to export', 'warning');
 
       const regionName = document.getElementById('autoRegionSelect')?.value || 'Fuel Data';
+      const isCCS = regionName.includes('CCS');
       const wb = XLSX.utils.book_new();
 
       // Sheet 1: Parsed fuel entries
@@ -12938,21 +14701,37 @@ Example:
         'Date', 'Site ID', 'Site Name', 'Technician',
         'Fuel Found (L)', 'Fuel Added (L)', 'Fuel Left on Site (L)',
         'Supplier', 'CPH', 'Current RT (hrs)', 'Previous RT (hrs)',
-        'DG Hours Used', 'Diesel Consumption (L)', 'Sender'
+        'DG Hours Used', 'Diesel Consumption (L)',
+        ...(isCCS ? ['Bowser Plate','Bowser Remaining (L)','Qty Fuel (Bowser)','Oil Level','Fan Belt','Coolant','Fuel Leaks','Stolen','Sender'] : ['Sender'])
       ];
       const data = [headers, ...rows.map(r => {
-        const fuelLeft = (r.fuelFound || 0) + (r.fuelAdded || 0); // estimated
+        const fuelLeft = r.fuelLeft || ((r.fuelFound || 0) + (r.fuelAdded || 0));
         const dgHours  = (r.currRt  || 0) - (r.prevRt  || 0);
         const dieselUsed = dgHours > 0 && r.cph > 0 ? +(dgHours * r.cph).toFixed(2) : '';
-        return [
+        const base = [
           r.date, r.siteId, r.siteName || '', r.techName,
           r.fuelFound || '', r.fuelAdded || '', fuelLeft || '',
-          r.supplier || '', r.cph || '',
+          r.supplier || '', r.stolen ? 'STOLEN' : (r.cph || ''),
           r.currRt || '', r.prevRt || '',
           dgHours > 0 ? +dgHours.toFixed(2) : '',
           dieselUsed,
-          r.sender
         ];
+        if (isCCS) {
+          base.push(
+            r.bowserPlate || '',
+            r.bowserRemaining || '',
+            r.bowserQty || '',
+            r['OIL LEVEL'] || r._rawOilLevel || '',
+            r['FAN BELT']  || r._rawFanBelt  || '',
+            r['COOLANT']   || r._rawCoolant  || '',
+            r['FUEL LEAKS']|| r._rawFuelLeaks|| '',
+            r.stolen ? 'YES' : 'NO',
+            r.sender
+          );
+        } else {
+          base.push(r.sender);
+        }
+        return base;
       })];
 
       const ws1 = XLSX.utils.aoa_to_sheet(data);
@@ -12960,31 +14739,53 @@ Example:
       ws1['!cols'] = [
         {wch:12},{wch:18},{wch:22},{wch:16},
         {wch:14},{wch:14},{wch:18},
-        {wch:10},{wch:8},{wch:16},{wch:16},
-        {wch:14},{wch:20},{wch:24}
+        {wch:10},{wch:10},{wch:16},{wch:16},
+        {wch:14},{wch:20},
+        ...(isCCS ? [{wch:16},{wch:18},{wch:16},{wch:12},{wch:12},{wch:12},{wch:14},{wch:8},{wch:24}] : [{wch:24}])
       ];
       XLSX.utils.book_append_sheet(wb, ws1, 'Fuel Entries');
 
       // Sheet 2: Summary per technician
       const byTech = {};
       rows.forEach(r => {
-        if (!byTech[r.techName]) byTech[r.techName] = { entries: 0, totalAdded: 0, sites: new Set() };
+        if (!byTech[r.techName]) byTech[r.techName] = { entries: 0, totalAdded: 0, sites: new Set(), stolen: 0 };
         byTech[r.techName].entries++;
         byTech[r.techName].totalAdded += r.fuelAdded || 0;
         if (r.siteId) byTech[r.techName].sites.add(r.siteId);
+        if (r.stolen) byTech[r.techName].stolen++;
       });
       const summaryData = [
-        ['Technician', 'Entries', 'Total Fuel Added (L)', 'Sites Visited'],
+        ['Technician', 'Entries', 'Total Fuel Added (L)', 'Sites Visited', ...(isCCS ? ['Stolen Incidents'] : [])],
         ...Object.entries(byTech).sort((a,b) => b[1].totalAdded - a[1].totalAdded)
-          .map(([tech, s]) => [tech, s.entries, s.totalAdded, s.sites.size])
+          .map(([tech, s]) => [tech, s.entries, s.totalAdded, s.sites.size, ...(isCCS ? [s.stolen||''] : [])])
       ];
       const ws2 = XLSX.utils.aoa_to_sheet(summaryData);
-      ws2['!cols'] = [{wch:20},{wch:10},{wch:22},{wch:14}];
+      ws2['!cols'] = [{wch:20},{wch:10},{wch:22},{wch:14},{wch:18}];
       XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
+
+      // CCS: Sheet 3 — Bowser tracking summary
+      if (isCCS) {
+        const bowserMap = {};
+        rows.forEach(r => {
+          const plate = r.bowserPlate || 'UNKNOWN';
+          if (!bowserMap[plate]) bowserMap[plate] = { trips: 0, totalAdded: 0, sites: [] };
+          bowserMap[plate].trips++;
+          bowserMap[plate].totalAdded += r.fuelAdded || 0;
+          if (r.siteId) bowserMap[plate].sites.push(r.siteId);
+        });
+        const bowserData = [
+          ['Bowser Plate', 'Trips Made', 'Total Fuel Delivered (L)', 'Sites Visited'],
+          ...Object.entries(bowserMap).sort((a,b) => b[1].totalAdded - a[1].totalAdded)
+            .map(([plate, b]) => [plate, b.trips, b.totalAdded, [...new Set(b.sites)].length])
+        ];
+        const ws3 = XLSX.utils.aoa_to_sheet(bowserData);
+        ws3['!cols'] = [{wch:16},{wch:12},{wch:26},{wch:16}];
+        XLSX.utils.book_append_sheet(wb, ws3, 'Bowser Summary');
+      }
 
       const fname = `fuel_${regionName.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
       XLSX.writeFile(wb, fname);
-      showToast(`Exported ${rows.length} entries + summary to Excel`, 'success');
+      showToast(`Exported ${rows.length} entries to Excel${isCCS ? ' (+ Bowser Summary sheet)' : ''}`, 'success');
     }
 
     // ============================================================
@@ -13367,8 +15168,868 @@ Example:
       tmRenderTable();
     });
 
+    // ===== BREADCRUMB SYSTEM =====
+    const PAGE_LABELS = {
+      dashboard: 'Dashboard', daily: 'Daily Entries', orders: 'Orders',
+      regions: 'Regions', reports: 'Reports', leaderboard: 'Leaderboard',
+      cycles: 'Cycle History', technicians: 'Tech Manager', automation: 'Automation'
+    };
+
+    // Breadcrumb trail stack — each entry: { label, page (optional), action (optional) }
+    let _breadcrumbTrail = [];
+
+    function updateBreadcrumb(page, subLabel, subAction) {
+      const bc = document.getElementById('pageBreadcrumb');
+      const pill = document.getElementById('breadcrumbRegionPill');
+      if (!bc) return;
+
+      const pageLabel = PAGE_LABELS[page] || page;
+
+      if (subLabel) {
+        // Deep navigation: Home > Page > Sub
+        _breadcrumbTrail = [
+          { label: pageLabel, action: () => setPage(page, null) },
+          { label: subLabel, action: subAction || null, current: true }
+        ];
+      } else {
+        // Top-level page
+        _breadcrumbTrail = [
+          { label: pageLabel, action: null, current: true }
+        ];
+      }
+
+      // Rebuild DOM
+      let html = `
+        <div class="breadcrumb-item">
+          <span onclick="setPage('dashboard',null)" style="cursor:pointer;" title="Home" aria-label="Home">
+            <i class="fa-regular fa-house" style="font-size:11px;"></i>
+          </span>
+        </div>`;
+
+      _breadcrumbTrail.forEach((crumb, i) => {
+        html += `<span class="breadcrumb-sep" aria-hidden="true"><i class="fa-regular fa-chevron-right" style="font-size:9px;"></i></span>`;
+        if (crumb.current) {
+          html += `<div class="breadcrumb-item current" id="breadcrumbCurrent" aria-current="page"><span>${crumb.label}</span></div>`;
+        } else {
+          html += `<div class="breadcrumb-item"><a onclick="${crumb.action ? '(' + crumb.action.toString() + ')()' : ''}" style="cursor:pointer;">${crumb.label}</a></div>`;
+        }
+      });
+
+      // Inline region pill on right
+      const region = DB.currentRegion || '-';
+      html += `<span id="breadcrumbRegionPill" style="margin-left:auto;font-size:var(--text-xs);color:var(--neutral-400);">
+        <span style="background:var(--accent-100);color:var(--accent-700);padding:2px 10px;border-radius:var(--radius-full);font-weight:500;">${region}</span>
+      </span>`;
+
+      bc.innerHTML = html;
+      bc.setAttribute('aria-label', 'Breadcrumb navigation');
+    }
+
+    // Helper to push a sub-breadcrumb (e.g. when opening order detail inline)
+    function pushBreadcrumb(subLabel, subAction) {
+      updateBreadcrumb(currentPage, subLabel, subAction);
+    }
+
+    // ===== DESTRUCTIVE CYCLE CONFIRM =====
+    function checkEndCycleConfirm() {
+      const phrase = (document.getElementById('endCycleConfirmPhrase')?.textContent || '').trim();
+      const input = (document.getElementById('endCycleConfirmInput')?.value || '').trim().toUpperCase();
+      const btn = document.getElementById('endCycleConfirmBtn');
+      const hint = document.getElementById('endCycleConfirmHint');
+      const inp = document.getElementById('endCycleConfirmInput');
+      const match = input === phrase.toUpperCase();
+      if (btn) { btn.disabled = !match; btn.style.opacity = match ? '1' : '0.5'; btn.style.cursor = match ? 'pointer' : 'not-allowed'; }
+      if (inp) inp.classList.toggle('matched', match);
+      if (hint) {
+        if (!input) { hint.textContent = ''; hint.className = 'field-hint'; }
+        else if (match) { hint.textContent = '✓ Confirmed — you may proceed'; hint.className = 'field-hint success'; }
+        else { hint.textContent = 'Text does not match — keep typing'; hint.className = 'field-hint error'; }
+      }
+    }
+
+    function openEndCycleModal() {
+      _openEndCycleModalCore();
+      const phrase = document.getElementById('endCycleConfirmPhrase');
+      const inp = document.getElementById('endCycleConfirmInput');
+      if (phrase) phrase.textContent = DB.currentCycleName || 'INITIAL CYCLE';
+      if (inp) { inp.value = ''; inp.classList.remove('matched'); }
+      checkEndCycleConfirm();
+    }
+
+    // ===== COMMAND PALETTE =====
+    const CMD_PAGES = [
+      { label: 'Dashboard', icon: 'fa-gauge-high', sub: 'Overview & KPIs', page: 'dashboard' },
+      { label: 'Daily Entries', icon: 'fa-calendar', sub: 'Log daily fuel supply', page: 'daily' },
+      { label: 'Orders', icon: 'fa-file-lines', sub: 'Manage fuel orders', page: 'orders' },
+      { label: 'Regions', icon: 'fa-building', sub: 'Region & tech management', page: 'regions' },
+      { label: 'Reports', icon: 'fa-chart-bar', sub: 'Analytics & export', page: 'reports' },
+      { label: 'Leaderboard', icon: 'fa-trophy', sub: 'Technician rankings', page: 'leaderboard' },
+      { label: 'Cycle History', icon: 'fa-rotate', sub: 'Past cycles archive', page: 'cycles' },
+      { label: 'Tech Manager', icon: 'fa-id-card', sub: 'Technician database', page: 'technicians' },
+      { label: 'Automation', icon: 'fa-robot', sub: 'Import & propagate', page: 'automation' },
+    ];
+    const CMD_ACTIONS = [
+      { label: 'Import Orders (WhatsApp)', icon: 'fa-whatsapp', sub: 'Parse WhatsApp message', fn: () => openWhatsAppImport() },
+      { label: 'Auto Daily Entry', icon: 'fa-file-excel', sub: 'Import from Excel', fn: () => openDailyAutoImport() },
+      { label: 'End Current Cycle', icon: 'fa-flag-checkered', sub: 'Archive & start fresh', fn: () => openEndCycleModal() },
+      { label: 'Toggle Dark Mode', icon: 'fa-moon', sub: 'Switch light/dark theme', fn: () => toggleDarkMode() },
+      { label: 'Keyboard Shortcuts', icon: 'fa-keyboard', sub: 'View all shortcuts', fn: () => openModal('shortcutsModal') },
+      { label: 'Watch List', icon: 'fa-eye', sub: 'Tracked technicians', fn: () => openWatchedPersonsModal() },
+      { label: 'What\'s New', icon: 'fa-sparkles', sub: 'See latest updates', fn: () => openWhatsNewModal() },
+      { label: 'Help Tour', icon: 'fa-circle-question', sub: 'Take a guided tour', fn: () => startOnboardingTour() },
+    ];
+    let _cmdSelectedIndex = 0;
+    let _cmdItems = [];
+
+    function openCommandPalette() {
+      const overlay = document.getElementById('cmdOverlay');
+      if (!overlay) return;
+      overlay.classList.add('active');
+      const inp = document.getElementById('cmdInput');
+      if (inp) { inp.value = ''; inp.focus(); }
+      renderCmdResults('');
+    }
+
+    function closeCommandPalette() {
+      const overlay = document.getElementById('cmdOverlay');
+      if (overlay) overlay.classList.remove('active');
+    }
+
+    function renderCmdResults(query) {
+      const body = document.getElementById('cmdBody');
+      if (!body) return;
+      query = query.toLowerCase().trim();
+      _cmdItems = [];
+      let html = '';
+
+      // Technician search
+      const region = DB.regions[DB.currentRegion];
+      if (query.length >= 2 && region) {
+        const techs = region.technicians.filter(t => t.toLowerCase().includes(query)).slice(0, 5);
+        if (techs.length) {
+          html += `<div class="cmd-section-label">Technicians</div>`;
+          techs.forEach(t => {
+            _cmdItems.push({ type: 'tech', label: t });
+            html += `<button class="cmd-item" onclick="closeCmdAndGoTech('${t}')"><div class="cmd-item-icon"><i class="fa-regular fa-user"></i></div><div class="cmd-item-text"><div class="cmd-item-label">${t}</div><div class="cmd-item-sub">Technician · ${DB.currentRegion}</div></div></button>`;
+          });
+        }
+
+        // Order search
+        const orders = Object.keys(region.orders).filter(o => o.toLowerCase().includes(query)).slice(0, 5);
+        if (orders.length) {
+          html += `<div class="cmd-section-label">Orders</div>`;
+          orders.forEach(o => {
+            _cmdItems.push({ type: 'order', label: o });
+            const ord = region.orders[o];
+            const pct = ord.totalLiters > 0 ? Math.round((ord.suppliedTotal/ord.totalLiters)*100) : 0;
+            html += `<button class="cmd-item" onclick="closeCommandPalette();setPage('orders',null)"><div class="cmd-item-icon"><i class="fa-regular fa-file-lines"></i></div><div class="cmd-item-text"><div class="cmd-item-label">${o}</div><div class="cmd-item-sub">${ord.totalLiters}L · ${pct}% used</div></div></button>`;
+          });
+        }
+      }
+
+      // Pages
+      const pages = CMD_PAGES.filter(p => !query || p.label.toLowerCase().includes(query) || p.sub.toLowerCase().includes(query));
+      if (pages.length) {
+        html += `<div class="cmd-section-label">Pages</div>`;
+        pages.forEach(p => {
+          _cmdItems.push({ type: 'page', data: p });
+          html += `<button class="cmd-item" onclick="closeCommandPalette();setPage('${p.page}',null)"><div class="cmd-item-icon"><i class="fa-regular ${p.icon}"></i></div><div class="cmd-item-text"><div class="cmd-item-label">${p.label}</div><div class="cmd-item-sub">${p.sub}</div></div><span class="cmd-item-tag">Page</span></button>`;
+        });
+      }
+
+      // Actions
+      const actions = CMD_ACTIONS.filter(a => !query || a.label.toLowerCase().includes(query) || a.sub.toLowerCase().includes(query));
+      if (actions.length) {
+        html += `<div class="cmd-section-label">Actions</div>`;
+        actions.forEach(a => {
+          _cmdItems.push({ type: 'action', data: a });
+          html += `<button class="cmd-item action" onclick="closeCommandPalette();(${a.fn.toString()})()"><div class="cmd-item-icon"><i class="fa-regular ${a.icon}"></i></div><div class="cmd-item-text"><div class="cmd-item-label">${a.label}</div><div class="cmd-item-sub">${a.sub}</div></div><span class="cmd-item-tag">Action</span></button>`;
+        });
+      }
+
+      body.innerHTML = html || `<div style="text-align:center;padding:var(--space-8);color:var(--neutral-400);font-size:var(--text-sm);">No results for "${query}"</div>`;
+      _cmdSelectedIndex = 0;
+      updateCmdSelection();
+    }
+
+    function closeCmdAndGoTech(techName) {
+      closeCommandPalette();
+      setPage('technicians', null);
+      setTimeout(() => {
+        _tmState.search = techName;
+        const inp = document.getElementById('tmSearchInput');
+        if (inp) inp.value = techName;
+        if (typeof tmRenderTable === 'function') tmRenderTable();
+      }, 400);
+    }
+
+    function updateCmdSelection() {
+      document.querySelectorAll('#cmdBody .cmd-item').forEach((el, i) => {
+        el.classList.toggle('selected', i === _cmdSelectedIndex);
+        if (i === _cmdSelectedIndex) el.scrollIntoView({ block: 'nearest' });
+      });
+    }
+
+    document.addEventListener('keydown', function(e) {
+      const overlay = document.getElementById('cmdOverlay');
+      if (!overlay) return;
+      const isOpen = overlay.classList.contains('active');
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        isOpen ? closeCommandPalette() : openCommandPalette();
+        return;
+      }
+      if (!isOpen) return;
+      const items = document.querySelectorAll('#cmdBody .cmd-item');
+      if (e.key === 'ArrowDown') { e.preventDefault(); _cmdSelectedIndex = Math.min(_cmdSelectedIndex + 1, items.length - 1); updateCmdSelection(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); _cmdSelectedIndex = Math.max(_cmdSelectedIndex - 1, 0); updateCmdSelection(); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (items[_cmdSelectedIndex]) items[_cmdSelectedIndex].click(); }
+    });
+
+    document.getElementById('cmdInput')?.addEventListener('input', function() {
+      renderCmdResults(this.value);
+    });
+
+    document.getElementById('cmdOverlay')?.addEventListener('click', function(e) {
+      if (e.target === this) closeCommandPalette();
+    });
+
+    // ===== ONBOARDING TOUR =====
+    const TOUR_STEPS = [
+      { selector: '#sidebar', title: 'Welcome to CCS Fuel System', desc: 'This sidebar is your main navigation. It\'s organised into Main pages and Quick Actions. Click any item to navigate, or collapse it for more screen space.', pos: 'right' },
+      { selector: '.search-bar', title: 'Command Palette & Search', desc: 'Click the search bar or press Ctrl+K to open the command palette — your fastest way to navigate anywhere, run actions, or find technicians and orders.', pos: 'bottom' },
+      { selector: '#regionSelect', title: 'Region Selector', desc: 'Your current region is always shown here. Change it to switch between New CCS, Old CCS, NRW, or Eastern data.', pos: 'bottom' },
+      { selector: '#notifBellBtn', title: 'Smart Notifications', desc: 'The bell shows alerts for overages, near-full orders, unassigned orders needing comments, and inactive technicians.', pos: 'bottom' },
+      { selector: '#pageBreadcrumb', title: 'Breadcrumb Navigation', desc: 'You always know where you are in the system. The breadcrumb shows your current page and region at a glance.', pos: 'bottom' },
+      { selector: '[data-tooltip="End Cycle"]', title: 'End Cycle — Safe by Design', desc: 'This critical action now requires you to type the current cycle name before confirming — protecting you from accidental data archiving.', pos: 'right' },
+    ];
+    let _tourStep = 0;
+    let _tourActive = false;
+
+    function startOnboardingTour() {
+      _tourActive = true;
+      _tourStep = 0;
+      document.getElementById('tourBackdrop').style.display = 'block';
+      document.getElementById('tourTooltip').style.display = 'block';
+      showTourStep(_tourStep);
+    }
+
+    function showTourStep(step) {
+      const steps = TOUR_STEPS;
+      if (step >= steps.length) { endTour(); return; }
+      const s = steps[step];
+      const el = document.querySelector(s.selector);
+      const tooltip = document.getElementById('tourTooltip');
+      const spotlight = document.getElementById('tourSpotlight');
+      document.getElementById('tourStepIndicator').textContent = `Step ${step + 1} of ${steps.length}`;
+      document.getElementById('tourTitle').textContent = s.title;
+      document.getElementById('tourDesc').textContent = s.desc;
+      document.getElementById('tourPrevBtn').style.display = step === 0 ? 'none' : '';
+      document.getElementById('tourNextBtn').textContent = step === steps.length - 1 ? 'Finish ✓' : 'Next →';
+
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Give scroll a moment to settle before measuring
+        requestAnimationFrame(() => {
+          const r = el.getBoundingClientRect();
+          const pad = 8;
+          spotlight.style.cssText = `left:${r.left - pad}px;top:${r.top - pad}px;width:${r.width + pad*2}px;height:${r.height + pad*2}px;display:block;`;
+          const tW = 300, tH = 200;
+          let tx, ty;
+          if (s.pos === 'right') {
+            tx = r.right + 16;
+            ty = r.top;
+          } else {
+            tx = r.left;
+            ty = r.bottom + 16;
+          }
+          // Clamp to viewport
+          if (tx + tW > window.innerWidth - 20) tx = window.innerWidth - tW - 20;
+          if (ty + tH > window.innerHeight - 20) ty = r.top - tH - 16;
+          if (tx < 10) tx = 10;
+          if (ty < 10) ty = 10;
+          tooltip.style.cssText = `left:${tx}px;top:${ty}px;width:${tW}px;display:block;`;
+        });
+      } else {
+        // Element not found — hide spotlight and center tooltip
+        spotlight.style.cssText = 'display:none;';
+        tooltip.style.cssText = `left:50%;top:50%;transform:translate(-50%,-50%);width:300px;display:block;`;
+      }
+    }
+
+    function tourNext() {
+      _tourStep++;
+      if (_tourStep >= TOUR_STEPS.length) endTour();
+      else showTourStep(_tourStep);
+    }
+
+    function tourPrev() {
+      if (_tourStep > 0) { _tourStep--; showTourStep(_tourStep); }
+    }
+
+    function endTour() {
+      _tourActive = false;
+      document.getElementById('tourBackdrop').style.display = 'none';
+      document.getElementById('tourTooltip').style.display = 'none';
+    }
+
+    // ===== WHAT'S NEW MODAL =====
+    function openWhatsNewModal() {
+      // Fix the date in the modal
+      const dateEl = document.querySelector('#whatsNewModal .text-xs[style*="color:var(--neutral-400)"]');
+      if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
+      openModal('whatsNewModal');
+    }
+
+    // ===== TABLE DENSITY TOGGLE =====
+    let _tableDensity = localStorage.getItem('ccs_table_density') || 'default';
+
+    function setTableDensity(density) {
+      _tableDensity = density;
+      localStorage.setItem('ccs_table_density', density);
+      const mc = document.getElementById('mainContent');
+      if (mc) {
+        mc.classList.remove('table-density-compact', 'table-density-comfortable');
+        if (density !== 'default') mc.classList.add('table-density-' + density);
+      }
+      document.querySelectorAll('.density-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.density === density);
+      });
+    }
+
+    function renderDensityToggle() {
+      return `<div class="density-toggle" role="group" aria-label="Table density">
+        <button class="density-btn ${_tableDensity==='compact'?'active':''}" data-density="compact" onclick="setTableDensity('compact')" title="Compact rows">Compact</button>
+        <button class="density-btn ${_tableDensity==='default'?'active':''}" data-density="default" onclick="setTableDensity('default')" title="Default rows">Default</button>
+        <button class="density-btn ${_tableDensity==='comfortable'?'active':''}" data-density="comfortable" onclick="setTableDensity('comfortable')" title="Comfortable rows">Comfortable</button>
+      </div>`;
+    }
+
+    // ===== COLUMN CHOOSER =====
+    // Per-table column visibility stored in localStorage
+    const COL_CONFIGS = {
+      orders: {
+        key: 'ccs_col_orders',
+        columns: [
+          { id: 'status',    label: 'Status',       default: true },
+          { id: 'vehicle',   label: 'Vehicle Plate', default: true },
+          { id: 'date',      label: 'Date',          default: true },
+          { id: 'total',     label: 'Total (L)',     default: true },
+          { id: 'supplied',  label: 'Supplied (L)',  default: true },
+          { id: 'balance',   label: 'Balance (L)',   default: true },
+          { id: 'progress',  label: 'Progress',      default: true },
+          { id: 'techs',     label: 'Technicians',   default: true },
+        ]
+      },
+      daily: {
+        key: 'ccs_col_daily',
+        columns: [
+          { id: 'technician', label: 'Technician',  default: true },
+          { id: 'order',      label: 'Order No',    default: true },
+          { id: 'supplied',   label: 'Supplied (L)',default: true },
+          { id: 'type',       label: 'Type',         default: true },
+          { id: 'comment',    label: 'Comment',      default: false },
+          { id: 'site',       label: 'Site ID',      default: false },
+        ]
+      }
+    };
+
+    function getVisibleCols(tableId) {
+      const config = COL_CONFIGS[tableId];
+      if (!config) return {};
+      try {
+        const saved = JSON.parse(localStorage.getItem(config.key) || 'null');
+        if (saved) return saved;
+      } catch(e) {}
+      // Build default
+      const defaults = {};
+      config.columns.forEach(c => { defaults[c.id] = c.default; });
+      return defaults;
+    }
+
+    function setColVisible(tableId, colId, visible) {
+      const vis = getVisibleCols(tableId);
+      vis[colId] = visible;
+      localStorage.setItem(COL_CONFIGS[tableId].key, JSON.stringify(vis));
+      // Re-apply visibility to live table
+      applyColVisibility(tableId);
+    }
+
+    function applyColVisibility(tableId) {
+      const vis = getVisibleCols(tableId);
+      Object.entries(vis).forEach(([colId, show]) => {
+        document.querySelectorAll(`[data-col="${tableId}-${colId}"]`).forEach(el => {
+          el.style.display = show ? '' : 'none';
+        });
+      });
+    }
+
+    function renderColChooser(tableId, extraClass) {
+      const config = COL_CONFIGS[tableId];
+      if (!config) return '';
+      const vis = getVisibleCols(tableId);
+      const id = `colChooser_${tableId}`;
+      const items = config.columns.map(c => `
+        <label class="col-chooser-item">
+          <input type="checkbox" ${vis[c.id] ? 'checked' : ''}
+            onchange="setColVisible('${tableId}','${c.id}',this.checked);updateColChooserBtn('${tableId}')">
+          ${c.label}
+        </label>`).join('');
+      return `
+        <div class="col-chooser-wrap" id="${id}_wrap">
+          <button class="col-chooser-btn" onclick="toggleColChooser('${tableId}')" title="Show/hide columns" aria-haspopup="true" aria-expanded="false" id="${id}_btn">
+            <i class="fa-regular fa-table-columns"></i> Columns
+          </button>
+          <div class="col-chooser-dropdown" id="${id}_dd" role="menu" aria-label="Column visibility">
+            <div class="col-chooser-header">Show / Hide Columns</div>
+            ${items}
+          </div>
+        </div>`;
+    }
+
+    function toggleColChooser(tableId) {
+      const dd = document.getElementById(`colChooser_${tableId}_dd`);
+      const btn = document.getElementById(`colChooser_${tableId}_btn`);
+      if (!dd) return;
+      const isOpen = dd.classList.toggle('open');
+      if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      if (isOpen) {
+        // Close on outside click
+        setTimeout(() => {
+          document.addEventListener('click', function _close(e) {
+            const wrap = document.getElementById(`colChooser_${tableId}_wrap`);
+            if (wrap && !wrap.contains(e.target)) {
+              dd.classList.remove('open');
+              if (btn) btn.setAttribute('aria-expanded', 'false');
+              document.removeEventListener('click', _close);
+            }
+          });
+        }, 0);
+      }
+    }
+
+    function updateColChooserBtn(tableId) {
+      const vis = getVisibleCols(tableId);
+      const config = COL_CONFIGS[tableId];
+      if (!config) return;
+      const hidden = config.columns.filter(c => !vis[c.id]).length;
+      const btn = document.getElementById(`colChooser_${tableId}_btn`);
+      if (btn) {
+        btn.innerHTML = hidden > 0
+          ? `<i class="fa-regular fa-table-columns"></i> Columns <span style="background:var(--accent-600);color:white;border-radius:999px;padding:0 5px;font-size:10px;">${hidden}</span>`
+          : `<i class="fa-regular fa-table-columns"></i> Columns`;
+      }
+    }
+
+    // ===== INLINE FORM MICRO-INTERACTIONS =====
+    // Attach live validation feedback to any input with data-validate attribute.
+    // data-validate values: "required", "number", "positive-number", "order-no", "plate"
+    function liveValidate(input) {
+      const rule = input.dataset.validate;
+      const hintId = input.dataset.hint;
+      const hint = hintId ? document.getElementById(hintId) : input.parentElement?.querySelector('.field-hint');
+      if (!hint) return;
+
+      const v = input.value.trim();
+
+      const setHint = (msg, state) => {
+        hint.textContent = msg;
+        hint.className = 'field-hint' + (state ? ' ' + state : '');
+      };
+
+      if (!v) { setHint('', ''); input.style.borderColor = ''; return; }
+
+      switch (rule) {
+        case 'required':
+          if (v.length >= 1) { setHint('✓ Looks good', 'success'); input.style.borderColor = 'var(--status-success)'; }
+          break;
+        case 'order-no': {
+          const exists = DB.regions[DB.currentRegion]?.orders[v.toUpperCase()];
+          if (exists) { setHint('⚠ Order number already exists', 'warning'); input.style.borderColor = 'var(--status-warning)'; }
+          else if (v.length >= 2) { setHint('✓ Available', 'success'); input.style.borderColor = 'var(--status-success)'; }
+          break;
+        }
+        case 'positive-number': {
+          const n = parseFloat(v);
+          if (isNaN(n) || n <= 0) { setHint('Enter a number greater than 0', 'error'); input.style.borderColor = 'var(--status-danger)'; }
+          else { setHint(`✓ ${n.toLocaleString()} litres`, 'success'); input.style.borderColor = 'var(--status-success)'; }
+          break;
+        }
+        case 'number': {
+          const n = parseFloat(v);
+          if (isNaN(n)) { setHint('Must be a valid number', 'error'); input.style.borderColor = 'var(--status-danger)'; }
+          else { setHint(`✓ ${n.toLocaleString()}`, 'success'); input.style.borderColor = 'var(--status-success)'; }
+          break;
+        }
+        case 'plate':
+          if (v.length >= 3) { setHint('✓ Vehicle plate recorded', 'success'); input.style.borderColor = 'var(--status-success)'; }
+          else { setHint('Enter at least 3 characters', 'warning'); input.style.borderColor = 'var(--status-warning)'; }
+          break;
+        case 'alloc-amount': {
+          const orderNo = document.getElementById('allocOrder')?.value;
+          const techName = document.getElementById('allocTech')?.value;
+          const order = DB.regions[DB.currentRegion]?.orders[orderNo];
+          const n = parseFloat(v);
+          if (isNaN(n) || n <= 0) {
+            setHint('Enter a positive amount', 'error');
+            input.style.borderColor = 'var(--status-danger)';
+          } else if (order) {
+            const otherTotal = Object.entries(order.allocations || {})
+              .filter(([t]) => t !== techName)
+              .reduce((s, [, amt]) => s + amt, 0);
+            const remaining = order.totalLiters - otherTotal;
+            if (n > remaining) {
+              setHint(`⚠ Exceeds available ${remaining}L`, 'warning');
+              input.style.borderColor = 'var(--status-warning)';
+            } else {
+              setHint(`✓ ${n}L of ${remaining}L available`, 'success');
+              input.style.borderColor = 'var(--status-success)';
+            }
+          } else {
+            setHint(`✓ ${n} litres`, 'success');
+            input.style.borderColor = 'var(--status-success)';
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    }
+
+    // Clear all validation styling when a form resets
+    function clearValidation(formSelector) {
+      document.querySelectorAll(formSelector + ' .field-hint').forEach(h => { h.textContent = ''; h.className = 'field-hint'; });
+      document.querySelectorAll(formSelector + ' input').forEach(i => { i.style.borderColor = ''; });
+    }
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const main = document.getElementById('mainContent');
+      const icon = document.getElementById('sidebarToggleIcon');
+      const btn = document.getElementById('sidebarToggleBtn');
+      if (!sidebar) return;
+      sidebar.classList.toggle('collapsed');
+      main?.classList.toggle('expanded');
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      if (icon) icon.className = isCollapsed ? 'fa-regular fa-chevron-right' : 'fa-regular fa-chevron-left';
+      if (btn) {
+        const span = btn.querySelector('span');
+        if (span) span.textContent = isCollapsed ? 'Expand' : 'Collapse';
+      }
+      localStorage.setItem('ccs_sidebar_collapsed', isCollapsed ? '1' : '0');
+    }
+
+    // ===== AUTH SYSTEM =====
+    const AUTH_USERS_KEY  = 'ccs_auth_users';
+    const AUTH_SESSION_KEY = 'ccs_auth_session';
+    const ALLOWED_DOMAIN  = 'ccszambia.com';
+
+    // --- Utility: SHA-256 hash via Web Crypto ---
+    async function hashPassword(password) {
+      const enc = new TextEncoder();
+      const buf = await crypto.subtle.digest('SHA-256', enc.encode(password));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+
+    // --- User store ---
+    function authGetUsers() {
+      try { return JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || '[]'); } catch { return []; }
+    }
+    function authSaveUsers(users) {
+      localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users));
+    }
+
+    // --- Session ---
+    function authGetSession() {
+      try { return JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null'); } catch { return null; }
+    }
+    function authSetSession(email) {
+      const token = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
+      localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ email, token, loginAt: new Date().toISOString() }));
+    }
+    function authClearSession() {
+      localStorage.removeItem(AUTH_SESSION_KEY);
+    }
+
+    // --- Current user helpers ---
+    function authCurrentUser() {
+      const session = authGetSession();
+      if (!session) return null;
+      return authGetUsers().find(u => u.email === session.email) || null;
+    }
+    function authIsAdmin() {
+      const u = authCurrentUser();
+      return u && u.isAdmin;
+    }
+
+    // --- Screen navigation ---
+    function authShowLanding() {
+      document.getElementById('landingPage').style.display = '';
+      document.getElementById('loginScreen').classList.remove('active');
+      document.getElementById('signupScreen').classList.remove('active');
+    }
+    function authShowLogin() {
+      document.getElementById('landingPage').style.display = 'none';
+      document.getElementById('loginScreen').classList.add('active');
+      document.getElementById('signupScreen').classList.remove('active');
+      setTimeout(() => document.getElementById('loginEmail').focus(), 100);
+    }
+    function authShowSignup() {
+      document.getElementById('landingPage').style.display = 'none';
+      document.getElementById('loginScreen').classList.remove('active');
+      document.getElementById('signupScreen').classList.add('active');
+      setTimeout(() => document.getElementById('signupEmail').focus(), 100);
+    }
+
+    // --- Error helpers ---
+    function authShowError(screen, msg) {
+      const el = document.getElementById(screen + 'Error');
+      if (el) { el.textContent = msg; el.classList.add('show'); }
+    }
+    function authClearError(screen) {
+      const el = document.getElementById(screen + 'Error');
+      if (el) el.classList.remove('show');
+    }
+
+    // --- Password visibility toggle ---
+    function authTogglePw(inputId, btn) {
+      const inp = document.getElementById(inputId);
+      if (!inp) return;
+      const isHidden = inp.type === 'password';
+      inp.type = isHidden ? 'text' : 'password';
+      btn.querySelector('i').className = isHidden ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+    }
+
+    // --- Domain validation ---
+    function authValidateDomain(email) {
+      return email.toLowerCase().trim().endsWith('@' + ALLOWED_DOMAIN);
+    }
+
+    // --- Login ---
+    async function doLogin() {
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      const password = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('loginBtn');
+
+      if (!email) return authShowError('login', 'Please enter your email address.');
+      if (!authValidateDomain(email)) return authShowError('login', `Only @${ALLOWED_DOMAIN} accounts are permitted.`);
+      if (!password) return authShowError('login', 'Please enter your password.');
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-regular fa-spinner fa-spin"></i> Signing in…';
+
+      const hash = await hashPassword(password);
+      const users = authGetUsers();
+      const user = users.find(u => u.email === email);
+
+      if (!user || user.passwordHash !== hash) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-regular fa-arrow-right-to-bracket"></i> Sign In';
+        return authShowError('login', 'Incorrect email or password. Please try again.');
+      }
+
+      authSetSession(email);
+      authEnterApp(user);
+    }
+
+    // --- Signup ---
+    async function doSignup() {
+      const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+      const password = document.getElementById('signupPassword').value;
+      const confirm = document.getElementById('signupConfirm').value;
+      const btn = document.getElementById('signupBtn');
+
+      if (!email) return authShowError('signup', 'Please enter your email address.');
+      if (!authValidateDomain(email)) return authShowError('signup', `Only @${ALLOWED_DOMAIN} accounts can register.`);
+      if (password.length < 8) return authShowError('signup', 'Password must be at least 8 characters.');
+      if (password !== confirm) return authShowError('signup', 'Passwords do not match.');
+
+      const users = authGetUsers();
+      if (users.find(u => u.email === email)) return authShowError('signup', 'An account with this email already exists.');
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-regular fa-spinner fa-spin"></i> Creating account…';
+
+      const hash = await hashPassword(password);
+      const isFirstUser = users.length === 0;
+      const newUser = { email, passwordHash: hash, isAdmin: isFirstUser, createdAt: new Date().toISOString() };
+      users.push(newUser);
+      authSaveUsers(users);
+      authSetSession(email);
+      authEnterApp(newUser);
+    }
+
+    // --- Enter app after successful auth ---
+    function authEnterApp(user) {
+      document.getElementById('authOverlay').classList.add('hidden');
+      // Update user pill
+      const initial = user.email.charAt(0).toUpperCase();
+      const namePart = user.email.split('@')[0];
+      document.getElementById('authUserAvatarSm').textContent = initial;
+      document.getElementById('authUserPillName').textContent = namePart;
+      document.getElementById('authDropdownName').textContent = namePart;
+      document.getElementById('authDropdownEmail').textContent = user.email;
+      // Show admin controls if admin
+      if (user.isAdmin) {
+        document.getElementById('authAdminMenuItem').style.display = '';
+        document.getElementById('sidebarAdminBtn').style.display = '';
+      }
+    }
+
+    // --- Logout ---
+    function doLogout() {
+      authClearSession();
+      closeAuthUserDropdown();
+      // Reset UI
+      document.getElementById('authOverlay').classList.remove('hidden');
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+      authClearError('login');
+      authShowLogin();
+    }
+
+    // --- User dropdown toggle ---
+    function toggleAuthUserDropdown() {
+      document.getElementById('authUserDropdown').classList.toggle('open');
+    }
+    function closeAuthUserDropdown() {
+      document.getElementById('authUserDropdown').classList.remove('open');
+    }
+    document.addEventListener('click', function(e) {
+      const pill = document.getElementById('authUserPill');
+      const dd = document.getElementById('authUserDropdown');
+      if (dd && pill && !pill.contains(e.target)) closeAuthUserDropdown();
+    });
+
+    // --- Admin page renderer ---
+    function renderAdminPage(container) {
+      if (!authIsAdmin()) {
+        container.innerHTML = `<div class="card" style="text-align:center;padding:3rem;color:var(--neutral-500);">
+          <i class="fa-regular fa-shield-halved" style="font-size:2rem;margin-bottom:1rem;display:block;"></i>
+          <p>Access denied. Admin privileges required.</p>
+        </div>`;
+        return;
+      }
+
+      const users = authGetUsers();
+      const currentEmail = authGetSession()?.email;
+
+      const rows = users.map((u, idx) => {
+        const initial = u.email.charAt(0).toUpperCase();
+        const namePart = u.email.split('@')[0];
+        const joinDate = new Date(u.createdAt).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+        const isSelf = u.email === currentEmail;
+        return `
+          <div class="admin-user-row">
+            <div class="admin-user-avatar">${initial}</div>
+            <div class="admin-user-info">
+              <div class="admin-user-email">${u.email} ${isSelf ? '<span style="font-size:0.7rem;color:var(--neutral-400);">(you)</span>' : ''}</div>
+              <div class="admin-user-meta">Joined ${joinDate}</div>
+            </div>
+            <span class="${u.isAdmin ? 'badge-admin' : 'badge-user'}">${u.isAdmin ? 'Admin' : 'User'}</span>
+            <div class="flex gap-2">
+              ${!isSelf ? `<button class="btn btn-sm btn-secondary" onclick="adminToggleRole(${idx})" title="${u.isAdmin ? 'Revoke admin' : 'Make admin'}">
+                <i class="fa-regular fa-${u.isAdmin ? 'user-minus' : 'user-shield'}"></i>
+              </button>` : ''}
+              ${!isSelf ? `<button class="btn btn-sm" style="background:rgba(220,53,69,0.1);color:var(--status-danger);border:1px solid rgba(220,53,69,0.2);" onclick="adminDeleteUser(${idx})" title="Remove user">
+                <i class="fa-regular fa-trash"></i>
+              </button>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="card mb-4">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h2 class="text-xl font-semibold">Admin Panel</h2>
+              <p class="text-sm" style="color:var(--neutral-500);margin-top:4px;">Manage user accounts for the CCS Fuel System</p>
+            </div>
+            <span class="badge-admin" style="padding:4px 12px;font-size:0.8rem;">${users.length} user${users.length !== 1 ? 's' : ''}</span>
+          </div>
+
+          <div class="card mb-4" style="background:var(--neutral-50);">
+            <h3 class="font-semibold mb-3" style="font-size:0.9rem;">Add User Manually</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="input-group">
+                <input type="email" class="input-field" id="adminNewEmail" placeholder=" ">
+                <label class="input-label">Email (@ccszambia.com)</label>
+              </div>
+              <div class="input-group">
+                <input type="password" class="input-field" id="adminNewPassword" placeholder=" ">
+                <label class="input-label">Temporary Password</label>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 mt-3">
+              <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;">
+                <input type="checkbox" id="adminNewIsAdmin"> Grant admin privileges
+              </label>
+              <button class="btn btn-primary btn-sm" onclick="adminAddUser()">
+                <i class="fa-regular fa-user-plus"></i> Add User
+              </button>
+            </div>
+          </div>
+
+          <h3 class="font-semibold mb-3" style="font-size:0.9rem;">Registered Users</h3>
+          <div id="adminUserList">
+            ${rows || '<p class="text-sm" style="color:var(--neutral-400);padding:1rem 0;">No users found.</p>'}
+          </div>
+        </div>
+      `;
+    }
+
+    async function adminAddUser() {
+      const email = document.getElementById('adminNewEmail').value.trim().toLowerCase();
+      const password = document.getElementById('adminNewPassword').value;
+      const isAdmin = document.getElementById('adminNewIsAdmin').checked;
+      if (!email || !authValidateDomain(email)) return showToast('Enter a valid @ccszambia.com email', 'error');
+      if (password.length < 8) return showToast('Password must be at least 8 characters', 'warning');
+      const users = authGetUsers();
+      if (users.find(u => u.email === email)) return showToast('User already exists', 'warning');
+      const hash = await hashPassword(password);
+      users.push({ email, passwordHash: hash, isAdmin, createdAt: new Date().toISOString() });
+      authSaveUsers(users);
+      showToast('User added: ' + email, 'success');
+      renderPageWithTransition('admin');
+    }
+
+    function adminToggleRole(idx) {
+      const users = authGetUsers();
+      if (!users[idx]) return;
+      users[idx].isAdmin = !users[idx].isAdmin;
+      authSaveUsers(users);
+      showToast((users[idx].isAdmin ? 'Admin granted to ' : 'Admin revoked from ') + users[idx].email);
+      renderPageWithTransition('admin');
+    }
+
+    function adminDeleteUser(idx) {
+      const users = authGetUsers();
+      if (!users[idx]) return;
+      const email = users[idx].email;
+      if (!confirm(`Remove user "${email}"? This cannot be undone.`)) return;
+      users.splice(idx, 1);
+      authSaveUsers(users);
+      showToast('User removed: ' + email);
+      renderPageWithTransition('admin');
+    }
+
+    // --- Auth gate: runs before init() ---
+    function authGate() {
+      const session = authGetSession();
+      if (session) {
+        const user = authGetUsers().find(u => u.email === session.email);
+        if (user) {
+          authEnterApp(user);
+          return true;
+        }
+      }
+      // No valid session — show landing
+      document.getElementById('authOverlay').classList.remove('hidden');
+      authShowLanding();
+      return false;
+    }
+
     // Start the application
-    init();
+    if (authGate()) { init(); }
   </script>
 </body>
 </html>
