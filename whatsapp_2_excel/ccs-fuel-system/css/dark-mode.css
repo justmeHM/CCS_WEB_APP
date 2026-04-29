@@ -1,0 +1,59 @@
+/* =====================================================
+   DARK MODE  —  css/dark-mode.css
+   All overrides when body has .dark-mode class.
+   ===================================================== */
+
+body.dark-mode {
+  --neutral-50:  #1A2634;
+  --neutral-100: #1F2E3F;
+  --neutral-200: #263549;
+  --neutral-300: #304055;
+  --neutral-400: #4A5F75;
+  --neutral-500: #6B7F95;
+  --neutral-600: #8FA3B8;
+  --neutral-700: #B0C2D2;
+  --neutral-800: #D0DDE8;
+  --neutral-900: #EDF2F7;
+
+  background: #0F1B28;
+  color: var(--neutral-900);
+}
+
+body.dark-mode .card,
+body.dark-mode .modal-container,
+body.dark-mode .cmd-palette,
+body.dark-mode .context-menu,
+body.dark-mode .notif-dropdown,
+body.dark-mode .auth-user-dropdown { background: var(--neutral-100); border-color: var(--neutral-300); }
+
+body.dark-mode .topbar,
+body.dark-mode .breadcrumb-bar,
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer { background: var(--neutral-100); border-color: var(--neutral-300); }
+
+body.dark-mode .input-field,
+body.dark-mode .select-field { background: var(--neutral-200); border-color: var(--neutral-300); color: var(--neutral-900); }
+
+body.dark-mode .input-label  { background: var(--neutral-100); }
+
+body.dark-mode .btn-secondary { background: var(--neutral-200); color: var(--neutral-800); border-color: var(--neutral-300); }
+body.dark-mode .btn-ghost     { color: var(--neutral-600); }
+body.dark-mode .btn-ghost:hover { background: var(--neutral-200); }
+
+body.dark-mode .table th   { background: var(--neutral-200); }
+body.dark-mode .table tbody tr:hover { background: var(--neutral-200); }
+body.dark-mode .table td, body.dark-mode .table th { border-color: var(--neutral-300); }
+
+body.dark-mode .order-body,
+body.dark-mode .stat-tile { background: var(--neutral-200); }
+
+body.dark-mode .kpi-card,
+body.dark-mode .leaderboard-card,
+body.dark-mode .tech-alloc-row,
+body.dark-mode .supply-log-row,
+body.dark-mode .admin-user-row,
+body.dark-mode .order-card { background: var(--neutral-100); border-color: var(--neutral-300); }
+
+body.dark-mode .toast { background: var(--neutral-100); border-color: var(--neutral-300); }
+
+body.dark-mode .skeleton { background: linear-gradient(90deg, var(--neutral-200) 25%, var(--neutral-300) 50%, var(--neutral-200) 75%); }

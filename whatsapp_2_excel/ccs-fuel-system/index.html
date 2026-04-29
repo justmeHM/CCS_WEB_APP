@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes" />
+  <meta name="theme-color" content="#C41E3A" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>CCS Fuel System · Enterprise</title>
+
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- External dependencies -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- App stylesheets (split by concern) -->
+  <link rel="stylesheet" href="css/design-tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/dark-mode.css" />
+</head>
+<body>
+
+  <!-- ===== AUTH OVERLAY ===== -->
+  <div id="authOverlay" class="auth-overlay hidden">
+    <div id="landingScreen" class="auth-screen active"></div>
+    <div id="loginScreen" class="auth-screen"></div>
+    <div id="signupScreen" class="auth-screen"></div>
+  </div>
+
+  <!-- ===== STATUS BAR ===== -->
+  <div class="footer-status-bar">
+    <div class="status-item">
+      <span class="status-dot online" id="systemStatusDot"></span>
+      <span id="systemStatusText">System Online</span>
+      <span style="margin-left:150px;font-weight:500;">
+        System Developed By Harrison Mwewa · Call/WhatsApp: 0770435328 &amp; 0778847177
+      </span>
+    </div>
+    <div class="status-item">
+      <i class="fa-regular fa-clock"></i>
+      <span id="footerSystemTime"></span>
+    </div>
+    <div class="status-item">
+      <i class="fa-regular fa-server"></i>
+      <span id="footerActiveRegion">Region: -</span>
+    </div>
+    <div class="status-item">
+      <i class="fa-regular fa-rotate"></i>
+      <span id="footerAutosave">Autosave Active</span>
+    </div>
+  </div>
+
+  <!-- ===== MAIN APP SHELL ===== -->
+  <div class="app-container">
+    <!-- Sidebar injected by layout.js -->
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation"></aside>
+
+    <!-- Main content area -->
+    <main class="main-content" id="mainContent" role="main">
+      <!-- Topbar injected by layout.js -->
+      <header class="topbar" id="topbar"></header>
+
+      <!-- Breadcrumb -->
+      <div class="breadcrumb-bar" id="breadcrumbBar"></div>
+
+      <!-- Page content rendered here by router -->
+      <div class="page-content" id="pageContent"></div>
+    </main>
+  </div>
+
+  <!-- ===== GLOBAL MODALS (rendered once, reused) ===== -->
+  <div id="modals-root"></div>
+
+  <!-- ===== OVERLAYS ===== -->
+  <div class="cmd-overlay" id="cmdOverlay" role="dialog" aria-modal="true" aria-label="Command palette">
+    <div class="cmd-palette" id="cmdPalette">
+      <div class="cmd-input-wrap">
+        <i class="fa-regular fa-magnifying-glass"></i>
+        <input type="text" class="cmd-input" id="cmdInput" placeholder="Search pages, actions, technicians…" autocomplete="off" />
+        <span class="cmd-kbd-hint"><span class="kbd" style="font-size:10px;">ESC</span> to close</span>
+      </div>
+      <div class="cmd-body" id="cmdBody" role="listbox"></div>
+      <div class="cmd-footer">
+        <span class="cmd-footer-hint"><span class="kbd">↑↓</span> navigate</span>
+        <span class="cmd-footer-hint"><span class="kbd">↵</span> select</span>
+        <span class="cmd-footer-hint"><span class="kbd">Ctrl K</span> toggle</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tour overlays -->
+  <div class="tour-backdrop" id="tourBackdrop" style="display:none;">
+    <div class="tour-spotlight" id="tourSpotlight"></div>
+  </div>
+  <div class="tour-tooltip" id="tourTooltip" style="display:none;">
+    <div class="tour-step-indicator" id="tourStepIndicator">Step 1 of 6</div>
+    <div class="tour-title" id="tourTitle"></div>
+    <div class="tour-desc" id="tourDesc"></div>
+    <div class="tour-actions">
+      <button class="btn btn-ghost btn-sm" onclick="CCS.Tour.end()">Skip tour</button>
+      <div style="display:flex;gap:var(--space-2);">
+        <button class="btn btn-secondary btn-sm" id="tourPrevBtn" onclick="CCS.Tour.prev()">Back</button>
+        <button class="btn btn-primary btn-sm" id="tourNextBtn" onclick="CCS.Tour.next()">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Context menu -->
+  <div class="context-menu" id="contextMenu" style="display:none;"></div>
+
+  <!-- ===== JAVASCRIPT MODULES (load order matters) ===== -->
+
+  <!-- 1. Core utilities (no dependencies) -->
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/dom.js"></script>
+  <script src="js/utils/formatters.js"></script>
+
+  <!-- 2. Data layer -->
+  <script src="js/modules/db.js"></script>
+  <script src="js/modules/auth.js"></script>
+
+  <!-- 3. UI services -->
+  <script src="js/modules/toast.js"></script>
+  <script src="js/modules/modal.js"></script>
+  <script src="js/modules/notifications.js"></script>
+  <script src="js/modules/command-palette.js"></script>
+  <script src="js/modules/tour.js"></script>
+  <script src="js/modules/layout.js"></script>
+  <script src="js/modules/router.js"></script>
+
+  <!-- 4. Shared UI components (used across pages) -->
+  <script src="js/modules/components.js"></script>
+  <script src="js/modules/excel-export.js"></script>
+  <script src="js/modules/drag-drop.js"></script>
+
+  <!-- 5. Page modules (each exports a render function) -->
+  <script src="js/pages/dashboard.js"></script>
+  <script src="js/pages/orders.js"></script>
+  <script src="js/pages/daily.js"></script>
+  <!-- Remaining pages: Technicians, Leaderboard, Reports, Automation, Cycles, Regions, Admin, Settings -->
+  <script src="js/pages/all-pages.js"></script>
+
+  <!-- 6. Bootstrap — runs last -->
+  <script src="js/app.js"></script>
+
+</body>
+</html>
